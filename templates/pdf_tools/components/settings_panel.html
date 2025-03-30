@@ -1,0 +1,517 @@
+<!-- PDF Settings Panel Component -->
+<div id="settingsPanel" class="mt-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div class="border-b border-gray-200">
+        <button type="button" id="settingsToggle" class="w-full px-4 py-3 text-left flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors">
+            <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span class="font-medium text-gray-700">Advanced Settings</span>
+                <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">Optional</span>
+            </div>
+            <svg id="settingsIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        </button>
+    </div>
+    
+    <div id="settingsContent" class="hidden p-4 space-y-4 bg-white">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- File Settings -->
+            <div class="space-y-3">
+                <h4 class="text-sm font-medium text-gray-700 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    File Settings
+                </h4>
+                
+                <div>
+                    <label for="outputFilename" class="block text-xs text-gray-600 mb-1">Custom Filename</label>
+                    <input type="text" id="outputFilename" name="outputFilename" class="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Leave blank for auto-generated">
+                </div>
+                
+                <div>
+                    <label class="flex items-center text-xs text-gray-600 mb-1">
+                        <input type="checkbox" id="saveToAccount" name="saveToAccount" class="h-3.5 w-3.5 rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-1.5" checked>
+                        Save to my account
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Quality Settings -->
+            <div class="space-y-3">
+                <h4 class="text-sm font-medium text-gray-700 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    </svg>
+                    Quality Settings
+                </h4>
+                
+                <div>
+                    <label for="pdfQuality" class="block text-xs text-gray-600 mb-1">PDF Quality</label>
+                    <select id="pdfQuality" name="pdfQuality" class="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        <option value="high">High Quality (Larger Size)</option>
+                        <option value="medium" selected>Medium Quality (Balanced)</option>
+                        <option value="low">Low Quality (Smaller Size)</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="flex items-center text-xs text-gray-600 mb-1">
+                        <input type="checkbox" id="optimizeImages" name="optimizeImages" class="h-3.5 w-3.5 rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-1.5" checked>
+                        Optimize embedded images
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Additional Settings -->
+        <div class="space-y-3 pt-3 border-t border-gray-200">
+            <h4 class="text-sm font-medium text-gray-700 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+                Additional Options
+            </h4>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                    <label class="flex items-center text-xs text-gray-600">
+                        <input type="checkbox" id="preserveMetadata" name="preserveMetadata" class="h-3.5 w-3.5 rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-1.5">
+                        Preserve document metadata
+                    </label>
+                </div>
+                
+                <div>
+                    <label class="flex items-center text-xs text-gray-600">
+                        <input type="checkbox" id="autoDownload" name="autoDownload" class="h-3.5 w-3.5 rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-1.5" checked>
+                        Auto-download after processing
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // This script should be included with the component
+    document.addEventListener('DOMContentLoaded', function() {
+        const settingsToggle = document.getElementById('settingsToggle');
+        const settingsContent = document.getElementById('settingsContent');
+        const settingsIcon = document.getElementById('settingsIcon');
+        
+        if (settingsToggle && settingsContent && settingsIcon) {
+            settingsToggle.addEventListener('click', function() {
+                // Toggle display
+                if (settingsContent.classList.contains('hidden')) {
+                    settingsContent.classList.remove('hidden');
+                    settingsIcon.classList.add('rotate-180');
+                } else {
+                    settingsContent.classList.add('hidden');
+                    settingsIcon.classList.remove('rotate-180');
+                }
+            });
+        }
+        
+        // Function to get settings as an object
+        window.getAdvancedSettings = function() {
+            return {
+                outputFilename: document.getElementById('outputFilename')?.value || '',
+                saveToAccount: document.getElementById('saveToAccount')?.checked || false,
+                pdfQuality: document.getElementById('pdfQuality')?.value || 'medium',
+                optimizeImages: document.getElementById('optimizeImages')?.checked || false,
+                preserveMetadata: document.getElementById('preserveMetadata')?.checked || false,
+                autoDownload: document.getElementById('autoDownload')?.checked || false
+            };
+        };
+    });
+</script> 
+<div id="settingsPanel" class="mt-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div class="border-b border-gray-200">
+        <button type="button" id="settingsToggle" class="w-full px-4 py-3 text-left flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors">
+            <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span class="font-medium text-gray-700">Advanced Settings</span>
+                <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">Optional</span>
+            </div>
+            <svg id="settingsIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        </button>
+    </div>
+    
+    <div id="settingsContent" class="hidden p-4 space-y-4 bg-white">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- File Settings -->
+            <div class="space-y-3">
+                <h4 class="text-sm font-medium text-gray-700 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    File Settings
+                </h4>
+                
+                <div>
+                    <label for="outputFilename" class="block text-xs text-gray-600 mb-1">Custom Filename</label>
+                    <input type="text" id="outputFilename" name="outputFilename" class="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Leave blank for auto-generated">
+                </div>
+                
+                <div>
+                    <label class="flex items-center text-xs text-gray-600 mb-1">
+                        <input type="checkbox" id="saveToAccount" name="saveToAccount" class="h-3.5 w-3.5 rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-1.5" checked>
+                        Save to my account
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Quality Settings -->
+            <div class="space-y-3">
+                <h4 class="text-sm font-medium text-gray-700 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    </svg>
+                    Quality Settings
+                </h4>
+                
+                <div>
+                    <label for="pdfQuality" class="block text-xs text-gray-600 mb-1">PDF Quality</label>
+                    <select id="pdfQuality" name="pdfQuality" class="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        <option value="high">High Quality (Larger Size)</option>
+                        <option value="medium" selected>Medium Quality (Balanced)</option>
+                        <option value="low">Low Quality (Smaller Size)</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="flex items-center text-xs text-gray-600 mb-1">
+                        <input type="checkbox" id="optimizeImages" name="optimizeImages" class="h-3.5 w-3.5 rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-1.5" checked>
+                        Optimize embedded images
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Additional Settings -->
+        <div class="space-y-3 pt-3 border-t border-gray-200">
+            <h4 class="text-sm font-medium text-gray-700 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+                Additional Options
+            </h4>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                    <label class="flex items-center text-xs text-gray-600">
+                        <input type="checkbox" id="preserveMetadata" name="preserveMetadata" class="h-3.5 w-3.5 rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-1.5">
+                        Preserve document metadata
+                    </label>
+                </div>
+                
+                <div>
+                    <label class="flex items-center text-xs text-gray-600">
+                        <input type="checkbox" id="autoDownload" name="autoDownload" class="h-3.5 w-3.5 rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-1.5" checked>
+                        Auto-download after processing
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // This script should be included with the component
+    document.addEventListener('DOMContentLoaded', function() {
+        const settingsToggle = document.getElementById('settingsToggle');
+        const settingsContent = document.getElementById('settingsContent');
+        const settingsIcon = document.getElementById('settingsIcon');
+        
+        if (settingsToggle && settingsContent && settingsIcon) {
+            settingsToggle.addEventListener('click', function() {
+                // Toggle display
+                if (settingsContent.classList.contains('hidden')) {
+                    settingsContent.classList.remove('hidden');
+                    settingsIcon.classList.add('rotate-180');
+                } else {
+                    settingsContent.classList.add('hidden');
+                    settingsIcon.classList.remove('rotate-180');
+                }
+            });
+        }
+        
+        // Function to get settings as an object
+        window.getAdvancedSettings = function() {
+            return {
+                outputFilename: document.getElementById('outputFilename')?.value || '',
+                saveToAccount: document.getElementById('saveToAccount')?.checked || false,
+                pdfQuality: document.getElementById('pdfQuality')?.value || 'medium',
+                optimizeImages: document.getElementById('optimizeImages')?.checked || false,
+                preserveMetadata: document.getElementById('preserveMetadata')?.checked || false,
+                autoDownload: document.getElementById('autoDownload')?.checked || false
+            };
+        };
+    });
+</script> 
+<div id="settingsPanel" class="mt-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div class="border-b border-gray-200">
+        <button type="button" id="settingsToggle" class="w-full px-4 py-3 text-left flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors">
+            <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span class="font-medium text-gray-700">Advanced Settings</span>
+                <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">Optional</span>
+            </div>
+            <svg id="settingsIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        </button>
+    </div>
+    
+    <div id="settingsContent" class="hidden p-4 space-y-4 bg-white">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- File Settings -->
+            <div class="space-y-3">
+                <h4 class="text-sm font-medium text-gray-700 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    File Settings
+                </h4>
+                
+                <div>
+                    <label for="outputFilename" class="block text-xs text-gray-600 mb-1">Custom Filename</label>
+                    <input type="text" id="outputFilename" name="outputFilename" class="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Leave blank for auto-generated">
+                </div>
+                
+                <div>
+                    <label class="flex items-center text-xs text-gray-600 mb-1">
+                        <input type="checkbox" id="saveToAccount" name="saveToAccount" class="h-3.5 w-3.5 rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-1.5" checked>
+                        Save to my account
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Quality Settings -->
+            <div class="space-y-3">
+                <h4 class="text-sm font-medium text-gray-700 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    </svg>
+                    Quality Settings
+                </h4>
+                
+                <div>
+                    <label for="pdfQuality" class="block text-xs text-gray-600 mb-1">PDF Quality</label>
+                    <select id="pdfQuality" name="pdfQuality" class="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        <option value="high">High Quality (Larger Size)</option>
+                        <option value="medium" selected>Medium Quality (Balanced)</option>
+                        <option value="low">Low Quality (Smaller Size)</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="flex items-center text-xs text-gray-600 mb-1">
+                        <input type="checkbox" id="optimizeImages" name="optimizeImages" class="h-3.5 w-3.5 rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-1.5" checked>
+                        Optimize embedded images
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Additional Settings -->
+        <div class="space-y-3 pt-3 border-t border-gray-200">
+            <h4 class="text-sm font-medium text-gray-700 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+                Additional Options
+            </h4>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                    <label class="flex items-center text-xs text-gray-600">
+                        <input type="checkbox" id="preserveMetadata" name="preserveMetadata" class="h-3.5 w-3.5 rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-1.5">
+                        Preserve document metadata
+                    </label>
+                </div>
+                
+                <div>
+                    <label class="flex items-center text-xs text-gray-600">
+                        <input type="checkbox" id="autoDownload" name="autoDownload" class="h-3.5 w-3.5 rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-1.5" checked>
+                        Auto-download after processing
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // This script should be included with the component
+    document.addEventListener('DOMContentLoaded', function() {
+        const settingsToggle = document.getElementById('settingsToggle');
+        const settingsContent = document.getElementById('settingsContent');
+        const settingsIcon = document.getElementById('settingsIcon');
+        
+        if (settingsToggle && settingsContent && settingsIcon) {
+            settingsToggle.addEventListener('click', function() {
+                // Toggle display
+                if (settingsContent.classList.contains('hidden')) {
+                    settingsContent.classList.remove('hidden');
+                    settingsIcon.classList.add('rotate-180');
+                } else {
+                    settingsContent.classList.add('hidden');
+                    settingsIcon.classList.remove('rotate-180');
+                }
+            });
+        }
+        
+        // Function to get settings as an object
+        window.getAdvancedSettings = function() {
+            return {
+                outputFilename: document.getElementById('outputFilename')?.value || '',
+                saveToAccount: document.getElementById('saveToAccount')?.checked || false,
+                pdfQuality: document.getElementById('pdfQuality')?.value || 'medium',
+                optimizeImages: document.getElementById('optimizeImages')?.checked || false,
+                preserveMetadata: document.getElementById('preserveMetadata')?.checked || false,
+                autoDownload: document.getElementById('autoDownload')?.checked || false
+            };
+        };
+    });
+</script> 
+<div id="settingsPanel" class="mt-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div class="border-b border-gray-200">
+        <button type="button" id="settingsToggle" class="w-full px-4 py-3 text-left flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors">
+            <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span class="font-medium text-gray-700">Advanced Settings</span>
+                <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">Optional</span>
+            </div>
+            <svg id="settingsIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        </button>
+    </div>
+    
+    <div id="settingsContent" class="hidden p-4 space-y-4 bg-white">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- File Settings -->
+            <div class="space-y-3">
+                <h4 class="text-sm font-medium text-gray-700 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    File Settings
+                </h4>
+                
+                <div>
+                    <label for="outputFilename" class="block text-xs text-gray-600 mb-1">Custom Filename</label>
+                    <input type="text" id="outputFilename" name="outputFilename" class="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Leave blank for auto-generated">
+                </div>
+                
+                <div>
+                    <label class="flex items-center text-xs text-gray-600 mb-1">
+                        <input type="checkbox" id="saveToAccount" name="saveToAccount" class="h-3.5 w-3.5 rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-1.5" checked>
+                        Save to my account
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Quality Settings -->
+            <div class="space-y-3">
+                <h4 class="text-sm font-medium text-gray-700 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    </svg>
+                    Quality Settings
+                </h4>
+                
+                <div>
+                    <label for="pdfQuality" class="block text-xs text-gray-600 mb-1">PDF Quality</label>
+                    <select id="pdfQuality" name="pdfQuality" class="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        <option value="high">High Quality (Larger Size)</option>
+                        <option value="medium" selected>Medium Quality (Balanced)</option>
+                        <option value="low">Low Quality (Smaller Size)</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="flex items-center text-xs text-gray-600 mb-1">
+                        <input type="checkbox" id="optimizeImages" name="optimizeImages" class="h-3.5 w-3.5 rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-1.5" checked>
+                        Optimize embedded images
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Additional Settings -->
+        <div class="space-y-3 pt-3 border-t border-gray-200">
+            <h4 class="text-sm font-medium text-gray-700 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+                Additional Options
+            </h4>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                    <label class="flex items-center text-xs text-gray-600">
+                        <input type="checkbox" id="preserveMetadata" name="preserveMetadata" class="h-3.5 w-3.5 rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-1.5">
+                        Preserve document metadata
+                    </label>
+                </div>
+                
+                <div>
+                    <label class="flex items-center text-xs text-gray-600">
+                        <input type="checkbox" id="autoDownload" name="autoDownload" class="h-3.5 w-3.5 rounded border-gray-300 text-blue-500 focus:ring-blue-500 mr-1.5" checked>
+                        Auto-download after processing
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // This script should be included with the component
+    document.addEventListener('DOMContentLoaded', function() {
+        const settingsToggle = document.getElementById('settingsToggle');
+        const settingsContent = document.getElementById('settingsContent');
+        const settingsIcon = document.getElementById('settingsIcon');
+        
+        if (settingsToggle && settingsContent && settingsIcon) {
+            settingsToggle.addEventListener('click', function() {
+                // Toggle display
+                if (settingsContent.classList.contains('hidden')) {
+                    settingsContent.classList.remove('hidden');
+                    settingsIcon.classList.add('rotate-180');
+                } else {
+                    settingsContent.classList.add('hidden');
+                    settingsIcon.classList.remove('rotate-180');
+                }
+            });
+        }
+        
+        // Function to get settings as an object
+        window.getAdvancedSettings = function() {
+            return {
+                outputFilename: document.getElementById('outputFilename')?.value || '',
+                saveToAccount: document.getElementById('saveToAccount')?.checked || false,
+                pdfQuality: document.getElementById('pdfQuality')?.value || 'medium',
+                optimizeImages: document.getElementById('optimizeImages')?.checked || false,
+                preserveMetadata: document.getElementById('preserveMetadata')?.checked || false,
+                autoDownload: document.getElementById('autoDownload')?.checked || false
+            };
+        };
+    });
+</script> 

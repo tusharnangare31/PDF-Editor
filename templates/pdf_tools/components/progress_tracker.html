@@ -1,0 +1,456 @@
+<!-- PDF Operation Progress Tracker Component -->
+<div id="progressTracker" class="hidden mt-6 bg-white rounded-lg border border-gray-200 p-4">
+    <div class="flex items-center justify-between mb-2">
+        <h3 class="text-lg font-medium text-gray-900">
+            <span id="progressStatus">Processing...</span>
+        </h3>
+        <span id="progressPercentage" class="text-sm font-medium text-indigo-600">0%</span>
+    </div>
+    
+    <div class="w-full bg-gray-200 rounded-full h-2.5">
+        <div id="progressBar" class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+    </div>
+    
+    <div class="mt-3 flex flex-wrap justify-between text-xs text-gray-500">
+        <div class="flex items-center">
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span id="progressTask">Preparing file...</span>
+        </div>
+        <div>
+            Estimated time: <span id="progressTime">~15 seconds</span>
+        </div>
+    </div>
+    
+    <div id="progressDetails" class="mt-4 pt-3 border-t border-gray-100 text-sm text-gray-600">
+        <!-- Progress details will be shown here -->
+    </div>
+</div>
+
+<script>
+    // This script should be included with the component
+    document.addEventListener('DOMContentLoaded', function() {
+        const tracker = document.getElementById('progressTracker');
+        const progressBar = document.getElementById('progressBar');
+        const progressStatus = document.getElementById('progressStatus');
+        const progressPercentage = document.getElementById('progressPercentage');
+        const progressTask = document.getElementById('progressTask');
+        const progressTime = document.getElementById('progressTime');
+        const progressDetails = document.getElementById('progressDetails');
+        
+        // Function to show progress tracker
+        window.showProgress = function() {
+            if (tracker) tracker.classList.remove('hidden');
+        };
+        
+        // Function to hide progress tracker
+        window.hideProgress = function() {
+            if (tracker) tracker.classList.add('hidden');
+        };
+        
+        // Function to update progress
+        window.updateProgress = function(percentage, status, task, time, details) {
+            if (progressBar) progressBar.style.width = percentage + '%';
+            if (progressPercentage) progressPercentage.textContent = percentage + '%';
+            if (progressStatus && status) progressStatus.textContent = status;
+            if (progressTask && task) progressTask.textContent = task;
+            if (progressTime && time) progressTime.textContent = time;
+            
+            if (progressDetails && details) {
+                progressDetails.innerHTML = details;
+                progressDetails.classList.remove('hidden');
+            } else if (progressDetails) {
+                progressDetails.classList.add('hidden');
+            }
+        };
+        
+        // Demo function to simulate progress (for testing)
+        window.simulateProgress = function(duration = 3000, steps = 10) {
+            let currentStep = 0;
+            const interval = duration / steps;
+            const tasks = [
+                'Preparing file...',
+                'Reading PDF structure...',
+                'Processing content...',
+                'Applying changes...',
+                'Finalizing document...'
+            ];
+            
+            window.showProgress();
+            
+            const timer = setInterval(() => {
+                currentStep++;
+                const percentage = Math.min(Math.round((currentStep / steps) * 100), 100);
+                const taskIndex = Math.min(Math.floor((currentStep / steps) * tasks.length), tasks.length - 1);
+                
+                window.updateProgress(
+                    percentage,
+                    percentage < 100 ? 'Processing...' : 'Complete!',
+                    tasks[taskIndex],
+                    `~${Math.round((duration - (currentStep * interval)) / 1000)} seconds`
+                );
+                
+                if (currentStep >= steps) {
+                    clearInterval(timer);
+                    
+                    // Complete state
+                    window.updateProgress(
+                        100,
+                        'Complete!',
+                        'All done!',
+                        '0 seconds',
+                        '<p class="text-green-600">Your file has been successfully processed.</p>'
+                    );
+                    
+                    // Optional: hide after completion
+                    setTimeout(() => {
+                        window.hideProgress();
+                    }, 2000);
+                }
+            }, interval);
+        };
+    });
+</script> <div id="progressTracker" class="hidden mt-6 bg-white rounded-lg border border-gray-200 p-4">
+    <div class="flex items-center justify-between mb-2">
+        <h3 class="text-lg font-medium text-gray-900">
+            <span id="progressStatus">Processing...</span>
+        </h3>
+        <span id="progressPercentage" class="text-sm font-medium text-indigo-600">0%</span>
+    </div>
+    
+    <div class="w-full bg-gray-200 rounded-full h-2.5">
+        <div id="progressBar" class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+    </div>
+    
+    <div class="mt-3 flex flex-wrap justify-between text-xs text-gray-500">
+        <div class="flex items-center">
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span id="progressTask">Preparing file...</span>
+        </div>
+        <div>
+            Estimated time: <span id="progressTime">~15 seconds</span>
+        </div>
+    </div>
+    
+    <div id="progressDetails" class="mt-4 pt-3 border-t border-gray-100 text-sm text-gray-600">
+        <!-- Progress details will be shown here -->
+    </div>
+</div>
+
+<script>
+    // This script should be included with the component
+    document.addEventListener('DOMContentLoaded', function() {
+        const tracker = document.getElementById('progressTracker');
+        const progressBar = document.getElementById('progressBar');
+        const progressStatus = document.getElementById('progressStatus');
+        const progressPercentage = document.getElementById('progressPercentage');
+        const progressTask = document.getElementById('progressTask');
+        const progressTime = document.getElementById('progressTime');
+        const progressDetails = document.getElementById('progressDetails');
+        
+        // Function to show progress tracker
+        window.showProgress = function() {
+            if (tracker) tracker.classList.remove('hidden');
+        };
+        
+        // Function to hide progress tracker
+        window.hideProgress = function() {
+            if (tracker) tracker.classList.add('hidden');
+        };
+        
+        // Function to update progress
+        window.updateProgress = function(percentage, status, task, time, details) {
+            if (progressBar) progressBar.style.width = percentage + '%';
+            if (progressPercentage) progressPercentage.textContent = percentage + '%';
+            if (progressStatus && status) progressStatus.textContent = status;
+            if (progressTask && task) progressTask.textContent = task;
+            if (progressTime && time) progressTime.textContent = time;
+            
+            if (progressDetails && details) {
+                progressDetails.innerHTML = details;
+                progressDetails.classList.remove('hidden');
+            } else if (progressDetails) {
+                progressDetails.classList.add('hidden');
+            }
+        };
+        
+        // Demo function to simulate progress (for testing)
+        window.simulateProgress = function(duration = 3000, steps = 10) {
+            let currentStep = 0;
+            const interval = duration / steps;
+            const tasks = [
+                'Preparing file...',
+                'Reading PDF structure...',
+                'Processing content...',
+                'Applying changes...',
+                'Finalizing document...'
+            ];
+            
+            window.showProgress();
+            
+            const timer = setInterval(() => {
+                currentStep++;
+                const percentage = Math.min(Math.round((currentStep / steps) * 100), 100);
+                const taskIndex = Math.min(Math.floor((currentStep / steps) * tasks.length), tasks.length - 1);
+                
+                window.updateProgress(
+                    percentage,
+                    percentage < 100 ? 'Processing...' : 'Complete!',
+                    tasks[taskIndex],
+                    `~${Math.round((duration - (currentStep * interval)) / 1000)} seconds`
+                );
+                
+                if (currentStep >= steps) {
+                    clearInterval(timer);
+                    
+                    // Complete state
+                    window.updateProgress(
+                        100,
+                        'Complete!',
+                        'All done!',
+                        '0 seconds',
+                        '<p class="text-green-600">Your file has been successfully processed.</p>'
+                    );
+                    
+                    // Optional: hide after completion
+                    setTimeout(() => {
+                        window.hideProgress();
+                    }, 2000);
+                }
+            }, interval);
+        };
+    });
+</script> 
+<div id="progressTracker" class="hidden mt-6 bg-white rounded-lg border border-gray-200 p-4">
+    <div class="flex items-center justify-between mb-2">
+        <h3 class="text-lg font-medium text-gray-900">
+            <span id="progressStatus">Processing...</span>
+        </h3>
+        <span id="progressPercentage" class="text-sm font-medium text-indigo-600">0%</span>
+    </div>
+    
+    <div class="w-full bg-gray-200 rounded-full h-2.5">
+        <div id="progressBar" class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+    </div>
+    
+    <div class="mt-3 flex flex-wrap justify-between text-xs text-gray-500">
+        <div class="flex items-center">
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span id="progressTask">Preparing file...</span>
+        </div>
+        <div>
+            Estimated time: <span id="progressTime">~15 seconds</span>
+        </div>
+    </div>
+    
+    <div id="progressDetails" class="mt-4 pt-3 border-t border-gray-100 text-sm text-gray-600">
+        <!-- Progress details will be shown here -->
+    </div>
+</div>
+
+<script>
+    // This script should be included with the component
+    document.addEventListener('DOMContentLoaded', function() {
+        const tracker = document.getElementById('progressTracker');
+        const progressBar = document.getElementById('progressBar');
+        const progressStatus = document.getElementById('progressStatus');
+        const progressPercentage = document.getElementById('progressPercentage');
+        const progressTask = document.getElementById('progressTask');
+        const progressTime = document.getElementById('progressTime');
+        const progressDetails = document.getElementById('progressDetails');
+        
+        // Function to show progress tracker
+        window.showProgress = function() {
+            if (tracker) tracker.classList.remove('hidden');
+        };
+        
+        // Function to hide progress tracker
+        window.hideProgress = function() {
+            if (tracker) tracker.classList.add('hidden');
+        };
+        
+        // Function to update progress
+        window.updateProgress = function(percentage, status, task, time, details) {
+            if (progressBar) progressBar.style.width = percentage + '%';
+            if (progressPercentage) progressPercentage.textContent = percentage + '%';
+            if (progressStatus && status) progressStatus.textContent = status;
+            if (progressTask && task) progressTask.textContent = task;
+            if (progressTime && time) progressTime.textContent = time;
+            
+            if (progressDetails && details) {
+                progressDetails.innerHTML = details;
+                progressDetails.classList.remove('hidden');
+            } else if (progressDetails) {
+                progressDetails.classList.add('hidden');
+            }
+        };
+        
+        // Demo function to simulate progress (for testing)
+        window.simulateProgress = function(duration = 3000, steps = 10) {
+            let currentStep = 0;
+            const interval = duration / steps;
+            const tasks = [
+                'Preparing file...',
+                'Reading PDF structure...',
+                'Processing content...',
+                'Applying changes...',
+                'Finalizing document...'
+            ];
+            
+            window.showProgress();
+            
+            const timer = setInterval(() => {
+                currentStep++;
+                const percentage = Math.min(Math.round((currentStep / steps) * 100), 100);
+                const taskIndex = Math.min(Math.floor((currentStep / steps) * tasks.length), tasks.length - 1);
+                
+                window.updateProgress(
+                    percentage,
+                    percentage < 100 ? 'Processing...' : 'Complete!',
+                    tasks[taskIndex],
+                    `~${Math.round((duration - (currentStep * interval)) / 1000)} seconds`
+                );
+                
+                if (currentStep >= steps) {
+                    clearInterval(timer);
+                    
+                    // Complete state
+                    window.updateProgress(
+                        100,
+                        'Complete!',
+                        'All done!',
+                        '0 seconds',
+                        '<p class="text-green-600">Your file has been successfully processed.</p>'
+                    );
+                    
+                    // Optional: hide after completion
+                    setTimeout(() => {
+                        window.hideProgress();
+                    }, 2000);
+                }
+            }, interval);
+        };
+    });
+</script> 
+<div id="progressTracker" class="hidden mt-6 bg-white rounded-lg border border-gray-200 p-4">
+    <div class="flex items-center justify-between mb-2">
+        <h3 class="text-lg font-medium text-gray-900">
+            <span id="progressStatus">Processing...</span>
+        </h3>
+        <span id="progressPercentage" class="text-sm font-medium text-indigo-600">0%</span>
+    </div>
+    
+    <div class="w-full bg-gray-200 rounded-full h-2.5">
+        <div id="progressBar" class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+    </div>
+    
+    <div class="mt-3 flex flex-wrap justify-between text-xs text-gray-500">
+        <div class="flex items-center">
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span id="progressTask">Preparing file...</span>
+        </div>
+        <div>
+            Estimated time: <span id="progressTime">~15 seconds</span>
+        </div>
+    </div>
+    
+    <div id="progressDetails" class="mt-4 pt-3 border-t border-gray-100 text-sm text-gray-600">
+        <!-- Progress details will be shown here -->
+    </div>
+</div>
+
+<script>
+    // This script should be included with the component
+    document.addEventListener('DOMContentLoaded', function() {
+        const tracker = document.getElementById('progressTracker');
+        const progressBar = document.getElementById('progressBar');
+        const progressStatus = document.getElementById('progressStatus');
+        const progressPercentage = document.getElementById('progressPercentage');
+        const progressTask = document.getElementById('progressTask');
+        const progressTime = document.getElementById('progressTime');
+        const progressDetails = document.getElementById('progressDetails');
+        
+        // Function to show progress tracker
+        window.showProgress = function() {
+            if (tracker) tracker.classList.remove('hidden');
+        };
+        
+        // Function to hide progress tracker
+        window.hideProgress = function() {
+            if (tracker) tracker.classList.add('hidden');
+        };
+        
+        // Function to update progress
+        window.updateProgress = function(percentage, status, task, time, details) {
+            if (progressBar) progressBar.style.width = percentage + '%';
+            if (progressPercentage) progressPercentage.textContent = percentage + '%';
+            if (progressStatus && status) progressStatus.textContent = status;
+            if (progressTask && task) progressTask.textContent = task;
+            if (progressTime && time) progressTime.textContent = time;
+            
+            if (progressDetails && details) {
+                progressDetails.innerHTML = details;
+                progressDetails.classList.remove('hidden');
+            } else if (progressDetails) {
+                progressDetails.classList.add('hidden');
+            }
+        };
+        
+        // Demo function to simulate progress (for testing)
+        window.simulateProgress = function(duration = 3000, steps = 10) {
+            let currentStep = 0;
+            const interval = duration / steps;
+            const tasks = [
+                'Preparing file...',
+                'Reading PDF structure...',
+                'Processing content...',
+                'Applying changes...',
+                'Finalizing document...'
+            ];
+            
+            window.showProgress();
+            
+            const timer = setInterval(() => {
+                currentStep++;
+                const percentage = Math.min(Math.round((currentStep / steps) * 100), 100);
+                const taskIndex = Math.min(Math.floor((currentStep / steps) * tasks.length), tasks.length - 1);
+                
+                window.updateProgress(
+                    percentage,
+                    percentage < 100 ? 'Processing...' : 'Complete!',
+                    tasks[taskIndex],
+                    `~${Math.round((duration - (currentStep * interval)) / 1000)} seconds`
+                );
+                
+                if (currentStep >= steps) {
+                    clearInterval(timer);
+                    
+                    // Complete state
+                    window.updateProgress(
+                        100,
+                        'Complete!',
+                        'All done!',
+                        '0 seconds',
+                        '<p class="text-green-600">Your file has been successfully processed.</p>'
+                    );
+                    
+                    // Optional: hide after completion
+                    setTimeout(() => {
+                        window.hideProgress();
+                    }, 2000);
+                }
+            }, interval);
+        };
+    });
+</script> 

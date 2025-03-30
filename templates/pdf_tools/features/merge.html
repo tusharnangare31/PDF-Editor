@@ -1,0 +1,407 @@
+{% extends 'base.html' %}
+
+{% block title %}Merge PDFs{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow rounded-lg p-6">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Merge PDFs</h1>
+    <p class="text-gray-600 mb-8">Combine multiple PDF files into a single document</p>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <form id="mergePdfForm" class="space-y-4">
+            <div class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 transition-all" id="mergeDropArea">
+                <input type="file" id="mergeFiles" name="files" multiple accept=".pdf" class="absolute inset-0 w-full h-full opacity-0 z-50 cursor-pointer">
+                <div class="text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                    </svg>
+                    <h3 class="mt-2 text-lg font-medium text-gray-900">Drag & drop PDF files here</h3>
+                    <p class="mt-1 text-sm text-gray-500">or click to browse</p>
+                </div>
+            </div>
+
+            <div id="selectedMergeFiles" class="hidden mt-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-lg font-medium text-gray-900">Selected Files:</h3>
+                    <div class="flex items-center">
+                        <span id="filesValidation" class="text-xs rounded-full px-2 py-1 mr-2"></span>
+                        <p class="text-sm text-blue-600">Drag files to reorder</p>
+                    </div>
+                </div>
+                <ul id="mergeFilesList" class="bg-gray-50 rounded-lg p-3 max-h-80 overflow-y-auto text-sm">
+                    <!-- Selected files will be displayed here -->
+                </ul>
+            </div>
+
+            <div id="filesInfo" class="hidden mt-4">
+                <div class="bg-blue-50 p-3 rounded-lg">
+                    <h4 class="text-blue-700 font-medium">Files Information</h4>
+                    <div class="grid grid-cols-2 gap-2 mt-2">
+                        <div>
+                            <p class="text-sm text-gray-600">Total files: <span id="totalFiles" class="font-medium">0</span></p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Total size: <span id="totalSize" class="font-medium">0</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-center">
+                <button type="submit" class="mt-4 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow transition-colors relative">
+                    <span id="mergeButtonText">Merge PDFs</span>
+                    <span id="mergeLoading" class="hidden absolute inset-0 flex items-center justify-center">
+                        <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const mergeForm = document.getElementById('mergePdfForm');
+        const mergeDropArea = document.getElementById('mergeDropArea');
+        const mergeFiles = document.getElementById('mergeFiles');
+        const selectedMergeFiles = document.getElementById('selectedMergeFiles');
+        const mergeFilesList = document.getElementById('mergeFilesList');
+        const mergeButtonText = document.getElementById('mergeButtonText');
+        const mergeLoading = document.getElementById('mergeLoading');
+        const filesValidation = document.getElementById('filesValidation');
+        const filesInfo = document.getElementById('filesInfo');
+        const totalFilesEl = document.getElementById('totalFiles');
+        const totalSizeEl = document.getElementById('totalSize');
+        
+        let fileList = []; // Array to store the files in order
+        let startTime; // For tracking processing time
+
+        // Handle file selection UI updates
+        mergeFiles.addEventListener('change', function() {
+            updateFilesArray(this.files);
+            updateMergeFilesUI();
+            validateFiles();
+        });
+
+        function updateFilesArray(files) {
+            for (const file of files) {
+                if (!fileList.some(f => f.name === file.name)) {
+                    fileList.push(file);
+                }
+            }
+        }
+
+        function updateMergeFilesUI() {
+            if (fileList.length > 0) {
+                selectedMergeFiles.classList.remove('hidden');
+                filesInfo.classList.remove('hidden');
+                mergeDropArea.classList.remove('border-gray-300');
+                mergeDropArea.classList.add('border-blue-500', 'bg-blue-50');
+                
+                // Update file count and total size
+                totalFilesEl.textContent = fileList.length;
+                let totalBytes = fileList.reduce((total, file) => total + file.size, 0);
+                totalSizeEl.textContent = formatFileSize(totalBytes);
+                
+                mergeFilesList.innerHTML = '';
+                fileList.forEach((file, index) => {
+                    const item = document.createElement('li');
+                    item.className = 'flex items-center py-2 px-2 border-b last:border-0 cursor-move hover:bg-blue-50 rounded';
+                    item.dataset.index = index;
+                    item.draggable = true;
+                    item.innerHTML = `
+                        <div class="flex items-center flex-1">
+                            <div class="mr-2 text-gray-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                                </svg>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span class="text-gray-800">${file.name}</span>
+                            <span class="ml-2 text-xs text-gray-500">(${formatFileSize(file.size)})</span>
+                        </div>
+                        <button type="button" class="text-red-500 hover:text-red-700 remove-file" data-index="${index}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    `;
+                    mergeFilesList.appendChild(item);
+                    
+                    // Add drag and drop functionality
+                    item.addEventListener('dragstart', handleDragStart);
+                    item.addEventListener('dragover', handleDragOver);
+                    item.addEventListener('dragenter', handleDragEnter);
+                    item.addEventListener('dragleave', handleDragLeave);
+                    item.addEventListener('drop', handleDrop);
+                    item.addEventListener('dragend', handleDragEnd);
+                    
+                    // Add remove button functionality
+                    const removeBtn = item.querySelector('.remove-file');
+                    removeBtn.addEventListener('click', function() {
+                        const index = parseInt(this.dataset.index);
+                        fileList.splice(index, 1);
+                        updateMergeFilesUI();
+                        validateFiles();
+                    });
+                });
+            } else {
+                selectedMergeFiles.classList.add('hidden');
+                filesInfo.classList.add('hidden');
+                mergeDropArea.classList.add('border-gray-300');
+                mergeDropArea.classList.remove('border-blue-500', 'bg-blue-50');
+            }
+        }
+        
+        function validateFiles() {
+            // Reset validation
+            filesValidation.className = 'text-xs rounded-full px-2 py-1 mr-2';
+            
+            if (fileList.length === 0) {
+                filesValidation.textContent = 'No files selected';
+                filesValidation.classList.add('bg-yellow-100', 'text-yellow-800');
+                return false;
+            }
+            
+            // Check if all files are PDFs
+            const invalidFiles = fileList.filter(file => !file.name.toLowerCase().endsWith('.pdf'));
+            if (invalidFiles.length > 0) {
+                filesValidation.textContent = `${invalidFiles.length} invalid files`;
+                filesValidation.classList.add('bg-red-100', 'text-red-800');
+                return false;
+            }
+            
+            // Check if there are at least 2 files
+            if (fileList.length < 2) {
+                filesValidation.textContent = 'Need at least 2 files';
+                filesValidation.classList.add('bg-yellow-100', 'text-yellow-800');
+                return false;
+            }
+            
+            // All validation passed
+            filesValidation.textContent = 'Files ready to merge';
+            filesValidation.classList.add('bg-green-100', 'text-green-800');
+            return true;
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // Drag and drop for reordering
+        let dragSrcEl = null;
+        
+        function handleDragStart(e) {
+            this.style.opacity = '0.4';
+            dragSrcEl = this;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.dataset.index);
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+        
+        function handleDragEnter(e) {
+            this.classList.add('bg-blue-100');
+        }
+        
+        function handleDragLeave(e) {
+            this.classList.remove('bg-blue-100');
+        }
+        
+        function handleDrop(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            
+            if (dragSrcEl !== this) {
+                const fromIndex = parseInt(dragSrcEl.dataset.index);
+                const toIndex = parseInt(this.dataset.index);
+                
+                // Reorder the files array
+                const temp = fileList[fromIndex];
+                if (fromIndex < toIndex) {
+                    // Moving down
+                    fileList.splice(toIndex + 1, 0, temp);
+                    fileList.splice(fromIndex, 1);
+                } else {
+                    // Moving up
+                    fileList.splice(toIndex, 0, temp);
+                    fileList.splice(fromIndex + 1, 1);
+                }
+                
+                updateMergeFilesUI();
+            }
+            
+            return false;
+        }
+        
+        function handleDragEnd(e) {
+            const items = document.querySelectorAll('#mergeFilesList li');
+            items.forEach(function(item) {
+                item.classList.remove('bg-blue-100');
+                item.style.opacity = '1';
+            });
+        }
+
+        // Handle form submission
+        mergeForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!validateFiles()) {
+                alert('Please select at least 2 valid PDF files to merge.');
+                return;
+            }
+            
+            // Show loading state
+            mergeButtonText.classList.add('invisible');
+            mergeLoading.classList.remove('hidden');
+            startTime = new Date();
+            
+            const formData = new FormData();
+            for (const file of fileList) {
+                formData.append('files', file);
+            }
+            
+            fetch('/api/merge-pdf/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading state
+                mergeButtonText.classList.remove('invisible');
+                mergeLoading.classList.add('hidden');
+                
+                if (data.success) {
+                    showMergeResults(data);
+                } else {
+                    alert('Error merging PDFs: ' + data.error);
+                }
+            })
+            .catch(error => {
+                // Hide loading state
+                mergeButtonText.classList.remove('invisible');
+                mergeLoading.classList.add('hidden');
+                
+                alert('Error merging PDFs: ' + error);
+            });
+        });
+        
+        function showMergeResults(data) {
+            // Create or get the results container
+            let resultsDiv = document.getElementById('mergeResults');
+            if (!resultsDiv) {
+                resultsDiv = document.createElement('div');
+                resultsDiv.id = 'mergeResults';
+                resultsDiv.className = 'mt-6 bg-blue-50 rounded-lg p-4 border border-blue-200';
+                mergeForm.appendChild(resultsDiv);
+            }
+            
+            // Calculate processing time
+            const endTime = new Date();
+            const processingTime = ((endTime - startTime) / 1000).toFixed(1);
+            
+            // Set the results content
+            resultsDiv.innerHTML = `
+                <h3 class="text-lg font-semibold text-blue-800 mb-2">PDFs Successfully Merged!</h3>
+                <div class="mb-4">
+                    <p class="text-sm text-gray-700">
+                        <span class="font-medium">${fileList.length}</span> PDF files were combined into a single document.
+                    </p>
+                </div>
+                <div class="p-2 mb-3 bg-blue-100 rounded-lg">
+                    <div class="flex justify-between items-center">
+                        <div class="text-sm text-blue-700">
+                            <span class="font-medium">Processing time:</span> ${processingTime} seconds
+                        </div>
+                        <div class="text-sm text-blue-700">
+                            <span class="font-medium">Total files:</span> ${fileList.length}
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <a href="${data.file_url}" class="flex-1 text-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download Merged PDF
+                    </a>
+                    <button onclick="window.location.reload()" class="flex-1 text-center px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Merge More PDFs
+                    </button>
+                </div>
+                <div class="mt-3 text-center">
+                    <div class="text-xs text-gray-500">
+                        All files are automatically deleted after 24 hours for your privacy
+                    </div>
+                </div>
+            `;
+            
+            // Scroll to the results
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Handle drag and drop UI for file input
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            mergeDropArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            mergeDropArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            mergeDropArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            mergeDropArea.classList.add('border-blue-500', 'bg-blue-50');
+        }
+
+        function unhighlight() {
+            mergeDropArea.classList.remove('border-blue-500', 'bg-blue-50');
+            if (fileList.length === 0) {
+                mergeDropArea.classList.add('border-gray-300');
+                mergeDropArea.classList.remove('bg-blue-50');
+            }
+        }
+
+        mergeDropArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                updateFilesArray(files);
+                updateMergeFilesUI();
+                validateFiles();
+            }
+        }
+    });
+</script>
+{% endblock %} 

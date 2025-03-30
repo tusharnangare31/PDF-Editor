@@ -1,0 +1,899 @@
+{% extends 'base.html' %}
+
+{% block title %}Remove Pages{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow rounded-lg p-6">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Remove Pages from PDF</h1>
+    <p class="text-gray-600 mb-8">Delete specific pages from your PDF document</p>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <form id="removePagesForm" class="space-y-4">
+            <div class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 transition-all" id="pdfDropArea">
+                <input type="file" id="pdfFile" name="file" accept=".pdf" class="absolute inset-0 w-full h-full opacity-0 z-50 cursor-pointer">
+                <div class="text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <h3 class="mt-2 text-lg font-medium text-gray-900">Drag & drop PDF file here</h3>
+                    <p class="mt-1 text-sm text-gray-500">or click to browse</p>
+                </div>
+            </div>
+
+            <div id="selectedPdfFile" class="hidden mt-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Selected File:</h3>
+                <div id="pdfFileInfo" class="bg-gray-50 rounded-lg p-3 flex flex-wrap items-center justify-between">
+                    <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span id="pdfFileName" class="text-gray-800"></span>
+                        <span id="pdfFileSize" class="ml-2 text-xs text-gray-500"></span>
+                    </div>
+                    <div>
+                        <span id="fileValidation" class="text-xs rounded-full px-2 py-1"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pdfPreview" class="hidden mt-4">
+                <div class="bg-yellow-50 p-3 rounded-lg">
+                    <h4 class="text-yellow-700 font-medium">PDF Information</h4>
+                    <div class="grid grid-cols-2 gap-2 mt-2">
+                        <div>
+                            <p class="text-sm text-gray-600">Total pages: <span id="totalPages" class="font-medium">-</span></p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Size: <span id="pdfSize" class="font-medium">-</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pageRangeContainer" class="hidden mt-6">
+                <label for="pageRange" class="block text-sm font-medium text-gray-700 mb-1">Pages to Remove (e.g., 1,3,5-7)</label>
+                <input type="text" name="pageRange" id="pageRange" class="w-full p-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500" placeholder="Enter page numbers">
+                <div class="mt-2">
+                    <p class="text-xs text-gray-600">Use comma to separate individual pages and hyphen for page ranges</p>
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        <span class="text-xs inline-flex items-center px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 cursor-pointer hover:bg-yellow-200 transition-colors" data-example="1">First page</span>
+                        <span class="text-xs inline-flex items-center px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 cursor-pointer hover:bg-yellow-200 transition-colors" data-example="last">Last page</span>
+                        <span class="text-xs inline-flex items-center px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 cursor-pointer hover:bg-yellow-200 transition-colors" data-example="odd">All odd pages</span>
+                        <span class="text-xs inline-flex items-center px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 cursor-pointer hover:bg-yellow-200 transition-colors" data-example="even">All even pages</span>
+                    </div>
+                </div>
+                <div id="pageValidationMessage" class="mt-2 text-sm hidden"></div>
+                
+                <div class="mt-4 bg-yellow-50 p-4 rounded-md">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3 flex-1 md:flex md:justify-between">
+                            <p class="text-sm text-yellow-700">
+                                Pages will be permanently removed from the PDF. This cannot be undone.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-center">
+                <button type="submit" class="mt-4 px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-md shadow transition-colors relative">
+                    <span id="removeButtonText">Remove Pages</span>
+                    <span id="removeLoading" class="hidden absolute inset-0 flex items-center justify-center">
+                        <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+        
+        // DOM Elements
+        const removePagesForm = document.getElementById('removePagesForm');
+        const pdfFile = document.getElementById('pdfFile');
+        const pdfDropArea = document.getElementById('pdfDropArea');
+        const selectedPdfFile = document.getElementById('selectedPdfFile');
+        const pdfFileName = document.getElementById('pdfFileName');
+        const pdfFileSize = document.getElementById('pdfFileSize');
+        const pdfPreview = document.getElementById('pdfPreview');
+        const totalPages = document.getElementById('totalPages');
+        const pdfSize = document.getElementById('pdfSize');
+        const fileValidation = document.getElementById('fileValidation');
+        const pageRangeContainer = document.getElementById('pageRangeContainer');
+        const pageRange = document.getElementById('pageRange');
+        const pageValidationMessage = document.getElementById('pageValidationMessage');
+        const removeButtonText = document.getElementById('removeButtonText');
+        const removeLoading = document.getElementById('removeLoading');
+        const pageExamples = document.querySelectorAll('[data-example]');
+        
+        // Variables
+        let selectedFile = null;
+        let pdfPageCount = 0;
+        let pagesToRemove = [];
+        let startTime;
+        
+        // UI Feedback for drag and drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            pdfDropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            pdfDropArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            pdfDropArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            pdfDropArea.classList.add('border-yellow-500', 'bg-yellow-50');
+        }
+        
+        function unhighlight() {
+            pdfDropArea.classList.remove('border-yellow-500', 'bg-yellow-50');
+            if (!selectedFile) {
+                pdfDropArea.classList.add('border-gray-300');
+                pdfDropArea.classList.remove('bg-yellow-50');
+            }
+        }
+        
+        // Handle file selection
+        pdfDropArea.addEventListener('drop', handleDrop, false);
+        pdfFile.addEventListener('change', handleFiles, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                handleFiles({ target: { files: files } });
+            }
+        }
+        
+        function showError(message) {
+            pageValidationMessage.textContent = message;
+            pageValidationMessage.classList.remove('hidden');
+            pageValidationMessage.classList.add('text-red-600');
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                pageValidationMessage.classList.add('hidden');
+            }, 5000);
+        }
+        
+        function handleFiles(e) {
+            const files = e.target.files;
+            
+            if (files.length === 0) return;
+            
+            const file = files[0];
+            selectedFile = file;
+            
+            // Update UI
+            pdfFileName.textContent = file.name;
+            pdfFileSize.textContent = formatFileSize(file.size);
+            pdfSize.textContent = formatFileSize(file.size);
+            selectedPdfFile.classList.remove('hidden');
+            
+            // Validate the file is a PDF
+            fileValidation.textContent = 'Analyzing PDF...';
+            fileValidation.className = 'text-xs rounded-full px-2 py-1 bg-yellow-100 text-yellow-800';
+            
+            if (!file.name.toLowerCase().endsWith('.pdf')) {
+                fileValidation.textContent = 'Not a PDF file';
+                fileValidation.className = 'text-xs rounded-full px-2 py-1 bg-red-100 text-red-800';
+                return;
+            }
+            
+            // Check file size
+            if (file.size > 100 * 1024 * 1024) { // 100MB limit
+                fileValidation.textContent = 'File too large (max 100MB)';
+                fileValidation.className = 'text-xs rounded-full px-2 py-1 bg-red-100 text-red-800';
+                return;
+            }
+            
+            // Read PDF information
+            const fileReader = new FileReader();
+            
+            fileReader.onload = function() {
+                const typedarray = new Uint8Array(this.result);
+                
+                pdfjsLib.getDocument({ data: typedarray }).promise.then(function(pdf) {
+                    pdfPageCount = pdf.numPages;
+                    totalPages.textContent = pdfPageCount;
+                    
+                    // Show UI elements
+                    pdfPreview.classList.remove('hidden');
+                    pageRangeContainer.classList.remove('hidden');
+                    
+                    // Valid PDF
+                    fileValidation.textContent = 'Valid PDF';
+                    fileValidation.className = 'text-xs rounded-full px-2 py-1 bg-green-100 text-green-800';
+                    
+                    // Update quick selection buttons if needed
+                    updateExampleButtons();
+                }).catch(function(error) {
+                    console.error('Error loading PDF:', error);
+                    fileValidation.textContent = 'Invalid PDF';
+                    fileValidation.className = 'text-xs rounded-full px-2 py-1 bg-red-100 text-red-800';
+                    showError('Error loading PDF. Make sure it is a valid PDF file.');
+                });
+            };
+            
+            fileReader.readAsArrayBuffer(file);
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function updateExampleButtons() {
+            // Update the "last" button to show the actual last page number
+            if (pdfPageCount > 0) {
+                const lastButton = document.querySelector('[data-example="last"]');
+                if (lastButton) {
+                    lastButton.textContent = `Last page (${pdfPageCount})`;
+                }
+            }
+        }
+        
+        // Quick selection buttons
+        pageExamples.forEach(button => {
+            button.addEventListener('click', function() {
+                const example = this.dataset.example;
+                
+                if (!pdfPageCount) return;
+                
+                switch (example) {
+                    case '1':
+                        pageRange.value = '1';
+                        break;
+                    case 'last':
+                        pageRange.value = pdfPageCount.toString();
+                        break;
+                    case 'odd':
+                        const oddPages = [];
+                        for (let i = 1; i <= pdfPageCount; i += 2) {
+                            oddPages.push(i);
+                        }
+                        pageRange.value = oddPages.join(',');
+                        break;
+                    case 'even':
+                        const evenPages = [];
+                        for (let i = 2; i <= pdfPageCount; i += 2) {
+                            evenPages.push(i);
+                        }
+                        pageRange.value = evenPages.join(',');
+                        break;
+                }
+                
+                validatePageRange();
+            });
+        });
+        
+        // Validate page range when input changes
+        pageRange.addEventListener('input', validatePageRange);
+        
+        function validatePageRange() {
+            // Reset validation
+            pageValidationMessage.classList.add('hidden');
+            pageValidationMessage.classList.remove('text-red-600', 'text-green-600');
+            
+            const pageRangeInput = pageRange.value.trim();
+            
+            if (!pageRangeInput) {
+                return; // Empty input, don't show validation
+            }
+            
+            if (pdfPageCount === 0) {
+                // Can't validate without knowing total pages
+                return;
+            }
+            
+            try {
+                // Parse the page range
+                pagesToRemove = [];
+                const parts = pageRangeInput.split(',');
+                
+                for (const part of parts) {
+                    const trimmedPart = part.trim();
+                    if (!trimmedPart) continue;
+                    
+                    if (trimmedPart.includes('-')) {
+                        // Range like "1-5"
+                        const [start, end] = trimmedPart.split('-').map(num => parseInt(num.trim(), 10));
+                        
+                        if (isNaN(start) || isNaN(end)) {
+                            throw new Error(`Invalid range: ${trimmedPart}`);
+                        }
+                        
+                        if (start > end) {
+                            throw new Error(`Start page greater than end page in range: ${trimmedPart}`);
+                        }
+                        
+                        if (start < 1) {
+                            throw new Error(`Invalid page number: ${start} (must be >= 1)`);
+                        }
+                        
+                        if (end > pdfPageCount) {
+                            throw new Error(`Page ${end} exceeds PDF length (${pdfPageCount} pages)`);
+                        }
+                        
+                        // Add all pages in range
+                        for (let i = start; i <= end; i++) {
+                            pagesToRemove.push(i);
+                        }
+                    } else {
+                        // Single page
+                        const pageNum = parseInt(trimmedPart, 10);
+                        
+                        if (isNaN(pageNum)) {
+                            throw new Error(`Invalid page number: ${trimmedPart}`);
+                        }
+                        
+                        if (pageNum < 1) {
+                            throw new Error(`Invalid page number: ${pageNum} (must be >= 1)`);
+                        }
+                        
+                        if (pageNum > pdfPageCount) {
+                            throw new Error(`Page ${pageNum} exceeds PDF length (${pdfPageCount} pages)`);
+                        }
+                        
+                        pagesToRemove.push(pageNum);
+                    }
+                }
+                
+                // Remove duplicates
+                pagesToRemove = [...new Set(pagesToRemove)].sort((a, b) => a - b);
+                
+                if (pagesToRemove.length === 0) {
+                    throw new Error('No valid pages specified');
+                }
+                
+                if (pagesToRemove.length >= pdfPageCount) {
+                    throw new Error('Cannot remove all pages from the PDF');
+                }
+                
+                // Success!
+                pageValidationMessage.textContent = pagesToRemove.length === 1 
+                    ? `Will remove page ${pagesToRemove[0]}`
+                    : `Will remove ${pagesToRemove.length} pages: ${pagesToRemove.join(', ')}`;
+                pageValidationMessage.classList.remove('hidden');
+                pageValidationMessage.classList.add('text-green-600');
+                return true;
+            } catch (error) {
+                pageValidationMessage.textContent = error.message;
+                pageValidationMessage.classList.remove('hidden');
+                pageValidationMessage.classList.add('text-red-600');
+                return false;
+            }
+        }
+        
+        // Form submission
+        removePagesForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!selectedFile) {
+                showError('Please select a PDF file.');
+                return;
+            }
+            
+            if (!pageRange.value.trim()) {
+                showError('Please specify which pages to remove.');
+                return;
+            }
+            
+            // Additional validation
+            if (!validatePageRange()) {
+                return;
+            }
+            
+            // Show loading state
+            removeButtonText.classList.add('invisible');
+            removeLoading.classList.remove('hidden');
+            startTime = new Date();
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('page_range', pageRange.value.trim());
+            
+            fetch('/api/remove-pages/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading state
+                removeButtonText.classList.remove('invisible');
+                removeLoading.classList.add('hidden');
+                
+                if (data.success) {
+                    showResults(data);
+                } else {
+                    showError(data.error || 'Error removing pages');
+                }
+            })
+            .catch(error => {
+                // Hide loading state
+                removeButtonText.classList.remove('invisible');
+                removeLoading.classList.add('hidden');
+                
+                showError('Error processing PDF: ' + error.message);
+            });
+        });
+        
+        function showResults(data) {
+            // Create or get the results container
+            let resultsDiv = document.getElementById('removeResults');
+            if (!resultsDiv) {
+                resultsDiv = document.createElement('div');
+                resultsDiv.id = 'removeResults';
+                resultsDiv.className = 'mt-6 bg-yellow-50 rounded-lg p-4 border border-yellow-200';
+                removePagesForm.appendChild(resultsDiv);
+            }
+            
+            // Calculate processing time
+            const endTime = new Date();
+            const processingTime = ((endTime - startTime) / 1000).toFixed(1);
+            
+            // Calculate remaining pages
+            const pagesRemoved = pagesToRemove.length;
+            const pagesRemaining = pdfPageCount - pagesRemoved;
+            
+            // Set the results content
+            resultsDiv.innerHTML = `
+                <h3 class="text-lg font-semibold text-yellow-800 mb-2">Pages Successfully Removed!</h3>
+                <div class="mb-4">
+                    <p class="text-sm text-gray-700">
+                        <span class="font-medium">${pagesRemoved}</span> pages were removed from your PDF.
+                    </p>
+                </div>
+                <div class="p-2 mb-3 bg-yellow-100 rounded-lg">
+                    <div class="flex justify-between items-center">
+                        <div class="text-sm text-yellow-700">
+                            <span class="font-medium">Processing time:</span> ${processingTime} seconds
+                        </div>
+                        <div class="text-sm text-yellow-700">
+                            <span class="font-medium">Pages remaining:</span> ${pagesRemaining}
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <a href="${data.file_url}" class="flex-1 text-center px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download Modified PDF
+                    </a>
+                    <button onclick="window.location.reload()" class="flex-1 text-center px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Remove Pages from Another PDF
+                    </button>
+                </div>
+                <div class="mt-3 text-center">
+                    <div class="text-xs text-gray-500">
+                        All files are automatically deleted after 24 hours for your privacy
+                    </div>
+                </div>
+            `;
+            
+            // Scroll to the results
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+</script>
+{% endblock %}                     ? `Will remove page ${pagesToRemove[0]}`
+                    : `Will remove ${pagesToRemove.length} pages: ${pagesToRemove.join(', ')}`;
+                pageValidationMessage.classList.remove('hidden');
+                pageValidationMessage.classList.add('text-green-600');
+                return true;
+            } catch (error) {
+                pageValidationMessage.textContent = error.message;
+                pageValidationMessage.classList.remove('hidden');
+                pageValidationMessage.classList.add('text-red-600');
+                return false;
+            }
+        }
+        
+        // Form submission
+        removePagesForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!selectedFile) {
+                showError('Please select a PDF file.');
+                return;
+            }
+            
+            if (!pageRange.value.trim()) {
+                showError('Please specify which pages to remove.');
+                return;
+            }
+            
+            // Additional validation
+            if (!validatePageRange()) {
+                return;
+            }
+            
+            // Show loading state
+            removeButtonText.classList.add('invisible');
+            removeLoading.classList.remove('hidden');
+            startTime = new Date();
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('page_range', pageRange.value.trim());
+            
+            fetch('/api/remove-pages/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading state
+                removeButtonText.classList.remove('invisible');
+                removeLoading.classList.add('hidden');
+                
+                if (data.success) {
+                    showResults(data);
+                } else {
+                    showError(data.error || 'Error removing pages');
+                }
+            })
+            .catch(error => {
+                // Hide loading state
+                removeButtonText.classList.remove('invisible');
+                removeLoading.classList.add('hidden');
+                
+                showError('Error processing PDF: ' + error.message);
+            });
+        });
+        
+        function showResults(data) {
+            // Create or get the results container
+            let resultsDiv = document.getElementById('removeResults');
+            if (!resultsDiv) {
+                resultsDiv = document.createElement('div');
+                resultsDiv.id = 'removeResults';
+                resultsDiv.className = 'mt-6 bg-yellow-50 rounded-lg p-4 border border-yellow-200';
+                removePagesForm.appendChild(resultsDiv);
+            }
+            
+            // Calculate processing time
+            const endTime = new Date();
+            const processingTime = ((endTime - startTime) / 1000).toFixed(1);
+            
+            // Calculate remaining pages
+            const pagesRemoved = pagesToRemove.length;
+            const pagesRemaining = pdfPageCount - pagesRemoved;
+            
+            // Set the results content
+            resultsDiv.innerHTML = `
+                <h3 class="text-lg font-semibold text-yellow-800 mb-2">Pages Successfully Removed!</h3>
+                <div class="mb-4">
+                    <p class="text-sm text-gray-700">
+                        <span class="font-medium">${pagesRemoved}</span> pages were removed from your PDF.
+                    </p>
+                </div>
+                <div class="p-2 mb-3 bg-yellow-100 rounded-lg">
+                    <div class="flex justify-between items-center">
+                        <div class="text-sm text-yellow-700">
+                            <span class="font-medium">Processing time:</span> ${processingTime} seconds
+                        </div>
+                        <div class="text-sm text-yellow-700">
+                            <span class="font-medium">Pages remaining:</span> ${pagesRemaining}
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <a href="${data.file_url}" class="flex-1 text-center px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download Modified PDF
+                    </a>
+                    <button onclick="window.location.reload()" class="flex-1 text-center px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Remove Pages from Another PDF
+                    </button>
+                </div>
+                <div class="mt-3 text-center">
+                    <div class="text-xs text-gray-500">
+                        All files are automatically deleted after 24 hours for your privacy
+                    </div>
+                </div>
+            `;
+            
+            // Scroll to the results
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+</script>
+{% endblock %} 
+                    ? `Will remove page ${pagesToRemove[0]}`
+                    : `Will remove ${pagesToRemove.length} pages: ${pagesToRemove.join(', ')}`;
+                pageValidationMessage.classList.remove('hidden');
+                pageValidationMessage.classList.add('text-green-600');
+                return true;
+            } catch (error) {
+                pageValidationMessage.textContent = error.message;
+                pageValidationMessage.classList.remove('hidden');
+                pageValidationMessage.classList.add('text-red-600');
+                return false;
+            }
+        }
+        
+        // Form submission
+        removePagesForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!selectedFile) {
+                showError('Please select a PDF file.');
+                return;
+            }
+            
+            if (!pageRange.value.trim()) {
+                showError('Please specify which pages to remove.');
+                return;
+            }
+            
+            // Additional validation
+            if (!validatePageRange()) {
+                return;
+            }
+            
+            // Show loading state
+            removeButtonText.classList.add('invisible');
+            removeLoading.classList.remove('hidden');
+            startTime = new Date();
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('page_range', pageRange.value.trim());
+            
+            fetch('/api/remove-pages/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading state
+                removeButtonText.classList.remove('invisible');
+                removeLoading.classList.add('hidden');
+                
+                if (data.success) {
+                    showResults(data);
+                } else {
+                    showError(data.error || 'Error removing pages');
+                }
+            })
+            .catch(error => {
+                // Hide loading state
+                removeButtonText.classList.remove('invisible');
+                removeLoading.classList.add('hidden');
+                
+                showError('Error processing PDF: ' + error.message);
+            });
+        });
+        
+        function showResults(data) {
+            // Create or get the results container
+            let resultsDiv = document.getElementById('removeResults');
+            if (!resultsDiv) {
+                resultsDiv = document.createElement('div');
+                resultsDiv.id = 'removeResults';
+                resultsDiv.className = 'mt-6 bg-yellow-50 rounded-lg p-4 border border-yellow-200';
+                removePagesForm.appendChild(resultsDiv);
+            }
+            
+            // Calculate processing time
+            const endTime = new Date();
+            const processingTime = ((endTime - startTime) / 1000).toFixed(1);
+            
+            // Calculate remaining pages
+            const pagesRemoved = pagesToRemove.length;
+            const pagesRemaining = pdfPageCount - pagesRemoved;
+            
+            // Set the results content
+            resultsDiv.innerHTML = `
+                <h3 class="text-lg font-semibold text-yellow-800 mb-2">Pages Successfully Removed!</h3>
+                <div class="mb-4">
+                    <p class="text-sm text-gray-700">
+                        <span class="font-medium">${pagesRemoved}</span> pages were removed from your PDF.
+                    </p>
+                </div>
+                <div class="p-2 mb-3 bg-yellow-100 rounded-lg">
+                    <div class="flex justify-between items-center">
+                        <div class="text-sm text-yellow-700">
+                            <span class="font-medium">Processing time:</span> ${processingTime} seconds
+                        </div>
+                        <div class="text-sm text-yellow-700">
+                            <span class="font-medium">Pages remaining:</span> ${pagesRemaining}
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <a href="${data.file_url}" class="flex-1 text-center px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download Modified PDF
+                    </a>
+                    <button onclick="window.location.reload()" class="flex-1 text-center px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Remove Pages from Another PDF
+                    </button>
+                </div>
+                <div class="mt-3 text-center">
+                    <div class="text-xs text-gray-500">
+                        All files are automatically deleted after 24 hours for your privacy
+                    </div>
+                </div>
+            `;
+            
+            // Scroll to the results
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+</script>
+{% endblock %} 
+                    ? `Will remove page ${pagesToRemove[0]}`
+                    : `Will remove ${pagesToRemove.length} pages: ${pagesToRemove.join(', ')}`;
+                pageValidationMessage.classList.remove('hidden');
+                pageValidationMessage.classList.add('text-green-600');
+                return true;
+            } catch (error) {
+                pageValidationMessage.textContent = error.message;
+                pageValidationMessage.classList.remove('hidden');
+                pageValidationMessage.classList.add('text-red-600');
+                return false;
+            }
+        }
+        
+        // Form submission
+        removePagesForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!selectedFile) {
+                showError('Please select a PDF file.');
+                return;
+            }
+            
+            if (!pageRange.value.trim()) {
+                showError('Please specify which pages to remove.');
+                return;
+            }
+            
+            // Additional validation
+            if (!validatePageRange()) {
+                return;
+            }
+            
+            // Show loading state
+            removeButtonText.classList.add('invisible');
+            removeLoading.classList.remove('hidden');
+            startTime = new Date();
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('page_range', pageRange.value.trim());
+            
+            fetch('/api/remove-pages/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading state
+                removeButtonText.classList.remove('invisible');
+                removeLoading.classList.add('hidden');
+                
+                if (data.success) {
+                    showResults(data);
+                } else {
+                    showError(data.error || 'Error removing pages');
+                }
+            })
+            .catch(error => {
+                // Hide loading state
+                removeButtonText.classList.remove('invisible');
+                removeLoading.classList.add('hidden');
+                
+                showError('Error processing PDF: ' + error.message);
+            });
+        });
+        
+        function showResults(data) {
+            // Create or get the results container
+            let resultsDiv = document.getElementById('removeResults');
+            if (!resultsDiv) {
+                resultsDiv = document.createElement('div');
+                resultsDiv.id = 'removeResults';
+                resultsDiv.className = 'mt-6 bg-yellow-50 rounded-lg p-4 border border-yellow-200';
+                removePagesForm.appendChild(resultsDiv);
+            }
+            
+            // Calculate processing time
+            const endTime = new Date();
+            const processingTime = ((endTime - startTime) / 1000).toFixed(1);
+            
+            // Calculate remaining pages
+            const pagesRemoved = pagesToRemove.length;
+            const pagesRemaining = pdfPageCount - pagesRemoved;
+            
+            // Set the results content
+            resultsDiv.innerHTML = `
+                <h3 class="text-lg font-semibold text-yellow-800 mb-2">Pages Successfully Removed!</h3>
+                <div class="mb-4">
+                    <p class="text-sm text-gray-700">
+                        <span class="font-medium">${pagesRemoved}</span> pages were removed from your PDF.
+                    </p>
+                </div>
+                <div class="p-2 mb-3 bg-yellow-100 rounded-lg">
+                    <div class="flex justify-between items-center">
+                        <div class="text-sm text-yellow-700">
+                            <span class="font-medium">Processing time:</span> ${processingTime} seconds
+                        </div>
+                        <div class="text-sm text-yellow-700">
+                            <span class="font-medium">Pages remaining:</span> ${pagesRemaining}
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <a href="${data.file_url}" class="flex-1 text-center px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download Modified PDF
+                    </a>
+                    <button onclick="window.location.reload()" class="flex-1 text-center px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Remove Pages from Another PDF
+                    </button>
+                </div>
+                <div class="mt-3 text-center">
+                    <div class="text-xs text-gray-500">
+                        All files are automatically deleted after 24 hours for your privacy
+                    </div>
+                </div>
+            `;
+            
+            // Scroll to the results
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+</script>
+{% endblock %} 

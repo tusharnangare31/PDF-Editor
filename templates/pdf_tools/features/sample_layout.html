@@ -1,0 +1,1125 @@
+{% extends "pdf_tools/base.html" %}
+{% load static %}
+
+{% block content %}
+    {% with page_title="Sample PDF Tool" page_description="This is a demonstration of the unified layout component. It provides consistent UI elements across all PDF operations." operation_type="sample" show_help_button=True show_examples_button=True %}
+        {% include "pdf_tools/components/feature_layout.html" with content=content %}
+    {% endwith %}
+{% endblock %}
+
+{% block page_content %}
+    {% with content=block.super %}
+        <!-- File Upload Area -->
+        <div class="mb-8">
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-500 transition-colors">
+                <div class="space-y-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">Upload PDF File</h3>
+                        <p class="text-sm text-gray-500">
+                            Drag and drop your PDF here, or click to browse
+                        </p>
+                    </div>
+                    <input type="file" id="fileUpload" class="hidden" accept=".pdf" />
+                    <button type="button" id="browseButton" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Browse Files
+                    </button>
+                </div>
+            </div>
+            <div id="fileValidation" class="mt-2 hidden">
+                <div class="flex items-center">
+                    <span id="fileValidationStatus" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <svg class="mr-1.5 h-2 w-2 text-green-400" fill="currentColor" viewBox="0 0 8 8">
+                            <circle cx="4" cy="4" r="3" />
+                        </svg>
+                        Valid PDF
+                    </span>
+                    <span id="fileSize" class="ml-2 text-xs text-gray-500"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operation Parameters -->
+        <div class="bg-gray-50 p-4 rounded-lg mb-6">
+            <h3 class="text-md font-medium text-gray-900 mb-3">Operation Parameters</h3>
+            <div class="space-y-3">
+                <div>
+                    <label for="paramOption" class="block text-sm font-medium text-gray-700">Select Option</label>
+                    <select id="paramOption" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option value="option1">Option 1</option>
+                        <option value="option2">Option 2</option>
+                        <option value="option3">Option 3</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="paramInput" class="block text-sm font-medium text-gray-700">Input Value</label>
+                    <input type="text" id="paramInput" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" placeholder="Enter a value">
+                </div>
+                <div>
+                    <div class="flex items-center">
+                        <input id="paramCheck" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        <label for="paramCheck" class="ml-2 block text-sm text-gray-900">Enable additional features</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="text-center">
+            <button type="button" id="processButton" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Process PDF
+            </button>
+        </div>
+        
+        <!-- Results Panel (Initially Hidden) -->
+        <div id="resultsPanel" class="mt-8 bg-white shadow rounded-lg p-6 hidden">
+            <div class="text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h2 class="mt-2 text-lg font-medium text-gray-900">PDF Processed Successfully</h2>
+                <p class="mt-1 text-sm text-gray-500">Your PDF has been processed with the selected parameters.</p>
+            </div>
+            
+            <div class="mt-6">
+                <h3 class="text-sm font-medium text-gray-700">Processing Summary</h3>
+                <dl class="mt-2 grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Original Size</dt>
+                        <dd id="originalSize" class="mt-1 text-sm text-gray-900">245 KB</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">New Size</dt>
+                        <dd id="newSize" class="mt-1 text-sm text-gray-900">102 KB</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Reduction</dt>
+                        <dd id="reduction" class="mt-1 text-sm text-gray-900">58%</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Time Taken</dt>
+                        <dd id="timeTaken" class="mt-1 text-sm text-gray-900">2.4 seconds</dd>
+                    </div>
+                </dl>
+            </div>
+            
+            <div class="mt-6">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-medium text-gray-700">Download Processed File</h3>
+                    <span id="processedFileSize" class="text-xs text-gray-500">102 KB</span>
+                </div>
+                <a href="#" id="downloadLink" class="mt-2 inline-flex items-center justify-center w-full px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download Processed PDF
+                </a>
+            </div>
+            
+            <div class="mt-6 flex justify-center">
+                <button type="button" id="processAnotherButton" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Process Another PDF
+                </button>
+            </div>
+        </div>
+    {% endwith %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileUpload = document.getElementById('fileUpload');
+        const browseButton = document.getElementById('browseButton');
+        const fileValidation = document.getElementById('fileValidation');
+        const fileValidationStatus = document.getElementById('fileValidationStatus');
+        const fileSize = document.getElementById('fileSize');
+        const processButton = document.getElementById('processButton');
+        const resultsPanel = document.getElementById('resultsPanel');
+        const processAnotherButton = document.getElementById('processAnotherButton');
+        
+        // Handle browse button click
+        if (browseButton && fileUpload) {
+            browseButton.addEventListener('click', function() {
+                fileUpload.click();
+            });
+        }
+        
+        // Handle file upload
+        if (fileUpload && fileValidation && fileValidationStatus && fileSize) {
+            fileUpload.addEventListener('change', function() {
+                if (fileUpload.files.length > 0) {
+                    const file = fileUpload.files[0];
+                    
+                    // Validate file is a PDF
+                    if (file.type === 'application/pdf') {
+                        // Show validation status
+                        fileValidation.classList.remove('hidden');
+                        fileValidationStatus.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
+                        fileValidationStatus.innerHTML = `
+                            <svg class="mr-1.5 h-2 w-2 text-green-400" fill="currentColor" viewBox="0 0 8 8">
+                                <circle cx="4" cy="4" r="3" />
+                            </svg>
+                            Valid PDF
+                        `;
+                        
+                        // Format file size
+                        const fileSizeKB = Math.round(file.size / 1024);
+                        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                        
+                        if (fileSizeKB < 1024) {
+                            fileSize.textContent = `${fileSizeKB} KB`;
+                        } else {
+                            fileSize.textContent = `${fileSizeMB} MB`;
+                        }
+                        
+                        // Show success notification
+                        window.showSuccessNotification(
+                            'File Uploaded',
+                            'Your PDF file has been successfully uploaded and is ready for processing.',
+                            3000
+                        );
+                    } else {
+                        // Show validation error
+                        fileValidation.classList.remove('hidden');
+                        fileValidationStatus.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800';
+                        fileValidationStatus.innerHTML = `
+                            <svg class="mr-1.5 h-2 w-2 text-red-400" fill="currentColor" viewBox="0 0 8 8">
+                                <circle cx="4" cy="4" r="3" />
+                            </svg>
+                            Invalid File
+                        `;
+                        
+                        fileSize.textContent = '';
+                        
+                        // Show error notification
+                        window.showErrorNotification(
+                            'Invalid File',
+                            'Please upload a valid PDF file.',
+                            5000
+                        );
+                    }
+                }
+            });
+        }
+        
+        // Handle process button click
+        if (processButton && resultsPanel) {
+            processButton.addEventListener('click', function() {
+                if (fileUpload.files.length === 0) {
+                    window.showWarningNotification(
+                        'No File Selected',
+                        'Please upload a PDF file before processing.',
+                        5000
+                    );
+                    return;
+                }
+                
+                // Check if file is valid
+                if (fileValidationStatus.classList.contains('bg-red-100')) {
+                    window.showErrorNotification(
+                        'Invalid File',
+                        'Please upload a valid PDF file before processing.',
+                        5000
+                    );
+                    return;
+                }
+                
+                // Show progress tracker
+                window.showProgress();
+                window.simulateProgress();
+                
+                // Simulate processing (would be an AJAX call in real app)
+                setTimeout(function() {
+                    // Hide progress tracker
+                    window.hideProgress();
+                    
+                    // Show results panel
+                    resultsPanel.classList.remove('hidden');
+                    
+                    // Show success notification
+                    window.showSuccessNotification(
+                        'PDF Processed',
+                        'Your PDF has been successfully processed and is ready for download.',
+                        5000
+                    );
+                    
+                    // Scroll to results
+                    resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 3000);
+            });
+        }
+        
+        // Handle process another button click
+        if (processAnotherButton && resultsPanel) {
+            processAnotherButton.addEventListener('click', function() {
+                // Hide results panel
+                resultsPanel.classList.add('hidden');
+                
+                // Reset form
+                if (fileUpload) {
+                    fileUpload.value = '';
+                }
+                
+                if (fileValidation) {
+                    fileValidation.classList.add('hidden');
+                }
+                
+                // Show info notification
+                window.showInfoNotification(
+                    'Ready for Processing',
+                    'You can now upload and process another PDF file.',
+                    3000
+                );
+                
+                // Scroll to top
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+    });
+</script>
+{% endblock %} 
+{% load static %}
+
+{% block content %}
+    {% with page_title="Sample PDF Tool" page_description="This is a demonstration of the unified layout component. It provides consistent UI elements across all PDF operations." operation_type="sample" show_help_button=True show_examples_button=True %}
+        {% include "pdf_tools/components/feature_layout.html" with content=content %}
+    {% endwith %}
+{% endblock %}
+
+{% block page_content %}
+    {% with content=block.super %}
+        <!-- File Upload Area -->
+        <div class="mb-8">
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-500 transition-colors">
+                <div class="space-y-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">Upload PDF File</h3>
+                        <p class="text-sm text-gray-500">
+                            Drag and drop your PDF here, or click to browse
+                        </p>
+                    </div>
+                    <input type="file" id="fileUpload" class="hidden" accept=".pdf" />
+                    <button type="button" id="browseButton" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Browse Files
+                    </button>
+                </div>
+            </div>
+            <div id="fileValidation" class="mt-2 hidden">
+                <div class="flex items-center">
+                    <span id="fileValidationStatus" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <svg class="mr-1.5 h-2 w-2 text-green-400" fill="currentColor" viewBox="0 0 8 8">
+                            <circle cx="4" cy="4" r="3" />
+                        </svg>
+                        Valid PDF
+                    </span>
+                    <span id="fileSize" class="ml-2 text-xs text-gray-500"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operation Parameters -->
+        <div class="bg-gray-50 p-4 rounded-lg mb-6">
+            <h3 class="text-md font-medium text-gray-900 mb-3">Operation Parameters</h3>
+            <div class="space-y-3">
+                <div>
+                    <label for="paramOption" class="block text-sm font-medium text-gray-700">Select Option</label>
+                    <select id="paramOption" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option value="option1">Option 1</option>
+                        <option value="option2">Option 2</option>
+                        <option value="option3">Option 3</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="paramInput" class="block text-sm font-medium text-gray-700">Input Value</label>
+                    <input type="text" id="paramInput" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" placeholder="Enter a value">
+                </div>
+                <div>
+                    <div class="flex items-center">
+                        <input id="paramCheck" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        <label for="paramCheck" class="ml-2 block text-sm text-gray-900">Enable additional features</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="text-center">
+            <button type="button" id="processButton" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Process PDF
+            </button>
+        </div>
+        
+        <!-- Results Panel (Initially Hidden) -->
+        <div id="resultsPanel" class="mt-8 bg-white shadow rounded-lg p-6 hidden">
+            <div class="text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h2 class="mt-2 text-lg font-medium text-gray-900">PDF Processed Successfully</h2>
+                <p class="mt-1 text-sm text-gray-500">Your PDF has been processed with the selected parameters.</p>
+            </div>
+            
+            <div class="mt-6">
+                <h3 class="text-sm font-medium text-gray-700">Processing Summary</h3>
+                <dl class="mt-2 grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Original Size</dt>
+                        <dd id="originalSize" class="mt-1 text-sm text-gray-900">245 KB</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">New Size</dt>
+                        <dd id="newSize" class="mt-1 text-sm text-gray-900">102 KB</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Reduction</dt>
+                        <dd id="reduction" class="mt-1 text-sm text-gray-900">58%</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Time Taken</dt>
+                        <dd id="timeTaken" class="mt-1 text-sm text-gray-900">2.4 seconds</dd>
+                    </div>
+                </dl>
+            </div>
+            
+            <div class="mt-6">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-medium text-gray-700">Download Processed File</h3>
+                    <span id="processedFileSize" class="text-xs text-gray-500">102 KB</span>
+                </div>
+                <a href="#" id="downloadLink" class="mt-2 inline-flex items-center justify-center w-full px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download Processed PDF
+                </a>
+            </div>
+            
+            <div class="mt-6 flex justify-center">
+                <button type="button" id="processAnotherButton" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Process Another PDF
+                </button>
+            </div>
+        </div>
+    {% endwith %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileUpload = document.getElementById('fileUpload');
+        const browseButton = document.getElementById('browseButton');
+        const fileValidation = document.getElementById('fileValidation');
+        const fileValidationStatus = document.getElementById('fileValidationStatus');
+        const fileSize = document.getElementById('fileSize');
+        const processButton = document.getElementById('processButton');
+        const resultsPanel = document.getElementById('resultsPanel');
+        const processAnotherButton = document.getElementById('processAnotherButton');
+        
+        // Handle browse button click
+        if (browseButton && fileUpload) {
+            browseButton.addEventListener('click', function() {
+                fileUpload.click();
+            });
+        }
+        
+        // Handle file upload
+        if (fileUpload && fileValidation && fileValidationStatus && fileSize) {
+            fileUpload.addEventListener('change', function() {
+                if (fileUpload.files.length > 0) {
+                    const file = fileUpload.files[0];
+                    
+                    // Validate file is a PDF
+                    if (file.type === 'application/pdf') {
+                        // Show validation status
+                        fileValidation.classList.remove('hidden');
+                        fileValidationStatus.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
+                        fileValidationStatus.innerHTML = `
+                            <svg class="mr-1.5 h-2 w-2 text-green-400" fill="currentColor" viewBox="0 0 8 8">
+                                <circle cx="4" cy="4" r="3" />
+                            </svg>
+                            Valid PDF
+                        `;
+                        
+                        // Format file size
+                        const fileSizeKB = Math.round(file.size / 1024);
+                        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                        
+                        if (fileSizeKB < 1024) {
+                            fileSize.textContent = `${fileSizeKB} KB`;
+                        } else {
+                            fileSize.textContent = `${fileSizeMB} MB`;
+                        }
+                        
+                        // Show success notification
+                        window.showSuccessNotification(
+                            'File Uploaded',
+                            'Your PDF file has been successfully uploaded and is ready for processing.',
+                            3000
+                        );
+                    } else {
+                        // Show validation error
+                        fileValidation.classList.remove('hidden');
+                        fileValidationStatus.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800';
+                        fileValidationStatus.innerHTML = `
+                            <svg class="mr-1.5 h-2 w-2 text-red-400" fill="currentColor" viewBox="0 0 8 8">
+                                <circle cx="4" cy="4" r="3" />
+                            </svg>
+                            Invalid File
+                        `;
+                        
+                        fileSize.textContent = '';
+                        
+                        // Show error notification
+                        window.showErrorNotification(
+                            'Invalid File',
+                            'Please upload a valid PDF file.',
+                            5000
+                        );
+                    }
+                }
+            });
+        }
+        
+        // Handle process button click
+        if (processButton && resultsPanel) {
+            processButton.addEventListener('click', function() {
+                if (fileUpload.files.length === 0) {
+                    window.showWarningNotification(
+                        'No File Selected',
+                        'Please upload a PDF file before processing.',
+                        5000
+                    );
+                    return;
+                }
+                
+                // Check if file is valid
+                if (fileValidationStatus.classList.contains('bg-red-100')) {
+                    window.showErrorNotification(
+                        'Invalid File',
+                        'Please upload a valid PDF file before processing.',
+                        5000
+                    );
+                    return;
+                }
+                
+                // Show progress tracker
+                window.showProgress();
+                window.simulateProgress();
+                
+                // Simulate processing (would be an AJAX call in real app)
+                setTimeout(function() {
+                    // Hide progress tracker
+                    window.hideProgress();
+                    
+                    // Show results panel
+                    resultsPanel.classList.remove('hidden');
+                    
+                    // Show success notification
+                    window.showSuccessNotification(
+                        'PDF Processed',
+                        'Your PDF has been successfully processed and is ready for download.',
+                        5000
+                    );
+                    
+                    // Scroll to results
+                    resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 3000);
+            });
+        }
+        
+        // Handle process another button click
+        if (processAnotherButton && resultsPanel) {
+            processAnotherButton.addEventListener('click', function() {
+                // Hide results panel
+                resultsPanel.classList.add('hidden');
+                
+                // Reset form
+                if (fileUpload) {
+                    fileUpload.value = '';
+                }
+                
+                if (fileValidation) {
+                    fileValidation.classList.add('hidden');
+                }
+                
+                // Show info notification
+                window.showInfoNotification(
+                    'Ready for Processing',
+                    'You can now upload and process another PDF file.',
+                    3000
+                );
+                
+                // Scroll to top
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+    });
+</script>
+{% endblock %} 
+{% load static %}
+
+{% block content %}
+    {% with page_title="Sample PDF Tool" page_description="This is a demonstration of the unified layout component. It provides consistent UI elements across all PDF operations." operation_type="sample" show_help_button=True show_examples_button=True %}
+        {% include "pdf_tools/components/feature_layout.html" with content=content %}
+    {% endwith %}
+{% endblock %}
+
+{% block page_content %}
+    {% with content=block.super %}
+        <!-- File Upload Area -->
+        <div class="mb-8">
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-500 transition-colors">
+                <div class="space-y-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">Upload PDF File</h3>
+                        <p class="text-sm text-gray-500">
+                            Drag and drop your PDF here, or click to browse
+                        </p>
+                    </div>
+                    <input type="file" id="fileUpload" class="hidden" accept=".pdf" />
+                    <button type="button" id="browseButton" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Browse Files
+                    </button>
+                </div>
+            </div>
+            <div id="fileValidation" class="mt-2 hidden">
+                <div class="flex items-center">
+                    <span id="fileValidationStatus" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <svg class="mr-1.5 h-2 w-2 text-green-400" fill="currentColor" viewBox="0 0 8 8">
+                            <circle cx="4" cy="4" r="3" />
+                        </svg>
+                        Valid PDF
+                    </span>
+                    <span id="fileSize" class="ml-2 text-xs text-gray-500"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operation Parameters -->
+        <div class="bg-gray-50 p-4 rounded-lg mb-6">
+            <h3 class="text-md font-medium text-gray-900 mb-3">Operation Parameters</h3>
+            <div class="space-y-3">
+                <div>
+                    <label for="paramOption" class="block text-sm font-medium text-gray-700">Select Option</label>
+                    <select id="paramOption" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option value="option1">Option 1</option>
+                        <option value="option2">Option 2</option>
+                        <option value="option3">Option 3</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="paramInput" class="block text-sm font-medium text-gray-700">Input Value</label>
+                    <input type="text" id="paramInput" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" placeholder="Enter a value">
+                </div>
+                <div>
+                    <div class="flex items-center">
+                        <input id="paramCheck" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        <label for="paramCheck" class="ml-2 block text-sm text-gray-900">Enable additional features</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="text-center">
+            <button type="button" id="processButton" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Process PDF
+            </button>
+        </div>
+        
+        <!-- Results Panel (Initially Hidden) -->
+        <div id="resultsPanel" class="mt-8 bg-white shadow rounded-lg p-6 hidden">
+            <div class="text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h2 class="mt-2 text-lg font-medium text-gray-900">PDF Processed Successfully</h2>
+                <p class="mt-1 text-sm text-gray-500">Your PDF has been processed with the selected parameters.</p>
+            </div>
+            
+            <div class="mt-6">
+                <h3 class="text-sm font-medium text-gray-700">Processing Summary</h3>
+                <dl class="mt-2 grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Original Size</dt>
+                        <dd id="originalSize" class="mt-1 text-sm text-gray-900">245 KB</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">New Size</dt>
+                        <dd id="newSize" class="mt-1 text-sm text-gray-900">102 KB</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Reduction</dt>
+                        <dd id="reduction" class="mt-1 text-sm text-gray-900">58%</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Time Taken</dt>
+                        <dd id="timeTaken" class="mt-1 text-sm text-gray-900">2.4 seconds</dd>
+                    </div>
+                </dl>
+            </div>
+            
+            <div class="mt-6">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-medium text-gray-700">Download Processed File</h3>
+                    <span id="processedFileSize" class="text-xs text-gray-500">102 KB</span>
+                </div>
+                <a href="#" id="downloadLink" class="mt-2 inline-flex items-center justify-center w-full px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download Processed PDF
+                </a>
+            </div>
+            
+            <div class="mt-6 flex justify-center">
+                <button type="button" id="processAnotherButton" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Process Another PDF
+                </button>
+            </div>
+        </div>
+    {% endwith %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileUpload = document.getElementById('fileUpload');
+        const browseButton = document.getElementById('browseButton');
+        const fileValidation = document.getElementById('fileValidation');
+        const fileValidationStatus = document.getElementById('fileValidationStatus');
+        const fileSize = document.getElementById('fileSize');
+        const processButton = document.getElementById('processButton');
+        const resultsPanel = document.getElementById('resultsPanel');
+        const processAnotherButton = document.getElementById('processAnotherButton');
+        
+        // Handle browse button click
+        if (browseButton && fileUpload) {
+            browseButton.addEventListener('click', function() {
+                fileUpload.click();
+            });
+        }
+        
+        // Handle file upload
+        if (fileUpload && fileValidation && fileValidationStatus && fileSize) {
+            fileUpload.addEventListener('change', function() {
+                if (fileUpload.files.length > 0) {
+                    const file = fileUpload.files[0];
+                    
+                    // Validate file is a PDF
+                    if (file.type === 'application/pdf') {
+                        // Show validation status
+                        fileValidation.classList.remove('hidden');
+                        fileValidationStatus.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
+                        fileValidationStatus.innerHTML = `
+                            <svg class="mr-1.5 h-2 w-2 text-green-400" fill="currentColor" viewBox="0 0 8 8">
+                                <circle cx="4" cy="4" r="3" />
+                            </svg>
+                            Valid PDF
+                        `;
+                        
+                        // Format file size
+                        const fileSizeKB = Math.round(file.size / 1024);
+                        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                        
+                        if (fileSizeKB < 1024) {
+                            fileSize.textContent = `${fileSizeKB} KB`;
+                        } else {
+                            fileSize.textContent = `${fileSizeMB} MB`;
+                        }
+                        
+                        // Show success notification
+                        window.showSuccessNotification(
+                            'File Uploaded',
+                            'Your PDF file has been successfully uploaded and is ready for processing.',
+                            3000
+                        );
+                    } else {
+                        // Show validation error
+                        fileValidation.classList.remove('hidden');
+                        fileValidationStatus.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800';
+                        fileValidationStatus.innerHTML = `
+                            <svg class="mr-1.5 h-2 w-2 text-red-400" fill="currentColor" viewBox="0 0 8 8">
+                                <circle cx="4" cy="4" r="3" />
+                            </svg>
+                            Invalid File
+                        `;
+                        
+                        fileSize.textContent = '';
+                        
+                        // Show error notification
+                        window.showErrorNotification(
+                            'Invalid File',
+                            'Please upload a valid PDF file.',
+                            5000
+                        );
+                    }
+                }
+            });
+        }
+        
+        // Handle process button click
+        if (processButton && resultsPanel) {
+            processButton.addEventListener('click', function() {
+                if (fileUpload.files.length === 0) {
+                    window.showWarningNotification(
+                        'No File Selected',
+                        'Please upload a PDF file before processing.',
+                        5000
+                    );
+                    return;
+                }
+                
+                // Check if file is valid
+                if (fileValidationStatus.classList.contains('bg-red-100')) {
+                    window.showErrorNotification(
+                        'Invalid File',
+                        'Please upload a valid PDF file before processing.',
+                        5000
+                    );
+                    return;
+                }
+                
+                // Show progress tracker
+                window.showProgress();
+                window.simulateProgress();
+                
+                // Simulate processing (would be an AJAX call in real app)
+                setTimeout(function() {
+                    // Hide progress tracker
+                    window.hideProgress();
+                    
+                    // Show results panel
+                    resultsPanel.classList.remove('hidden');
+                    
+                    // Show success notification
+                    window.showSuccessNotification(
+                        'PDF Processed',
+                        'Your PDF has been successfully processed and is ready for download.',
+                        5000
+                    );
+                    
+                    // Scroll to results
+                    resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 3000);
+            });
+        }
+        
+        // Handle process another button click
+        if (processAnotherButton && resultsPanel) {
+            processAnotherButton.addEventListener('click', function() {
+                // Hide results panel
+                resultsPanel.classList.add('hidden');
+                
+                // Reset form
+                if (fileUpload) {
+                    fileUpload.value = '';
+                }
+                
+                if (fileValidation) {
+                    fileValidation.classList.add('hidden');
+                }
+                
+                // Show info notification
+                window.showInfoNotification(
+                    'Ready for Processing',
+                    'You can now upload and process another PDF file.',
+                    3000
+                );
+                
+                // Scroll to top
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+    });
+</script>
+{% endblock %} 
+{% load static %}
+
+{% block content %}
+    {% with page_title="Sample PDF Tool" page_description="This is a demonstration of the unified layout component. It provides consistent UI elements across all PDF operations." operation_type="sample" show_help_button=True show_examples_button=True %}
+        {% include "pdf_tools/components/feature_layout.html" with content=content %}
+    {% endwith %}
+{% endblock %}
+
+{% block page_content %}
+    {% with content=block.super %}
+        <!-- File Upload Area -->
+        <div class="mb-8">
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-500 transition-colors">
+                <div class="space-y-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">Upload PDF File</h3>
+                        <p class="text-sm text-gray-500">
+                            Drag and drop your PDF here, or click to browse
+                        </p>
+                    </div>
+                    <input type="file" id="fileUpload" class="hidden" accept=".pdf" />
+                    <button type="button" id="browseButton" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Browse Files
+                    </button>
+                </div>
+            </div>
+            <div id="fileValidation" class="mt-2 hidden">
+                <div class="flex items-center">
+                    <span id="fileValidationStatus" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <svg class="mr-1.5 h-2 w-2 text-green-400" fill="currentColor" viewBox="0 0 8 8">
+                            <circle cx="4" cy="4" r="3" />
+                        </svg>
+                        Valid PDF
+                    </span>
+                    <span id="fileSize" class="ml-2 text-xs text-gray-500"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operation Parameters -->
+        <div class="bg-gray-50 p-4 rounded-lg mb-6">
+            <h3 class="text-md font-medium text-gray-900 mb-3">Operation Parameters</h3>
+            <div class="space-y-3">
+                <div>
+                    <label for="paramOption" class="block text-sm font-medium text-gray-700">Select Option</label>
+                    <select id="paramOption" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option value="option1">Option 1</option>
+                        <option value="option2">Option 2</option>
+                        <option value="option3">Option 3</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="paramInput" class="block text-sm font-medium text-gray-700">Input Value</label>
+                    <input type="text" id="paramInput" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" placeholder="Enter a value">
+                </div>
+                <div>
+                    <div class="flex items-center">
+                        <input id="paramCheck" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        <label for="paramCheck" class="ml-2 block text-sm text-gray-900">Enable additional features</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="text-center">
+            <button type="button" id="processButton" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Process PDF
+            </button>
+        </div>
+        
+        <!-- Results Panel (Initially Hidden) -->
+        <div id="resultsPanel" class="mt-8 bg-white shadow rounded-lg p-6 hidden">
+            <div class="text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h2 class="mt-2 text-lg font-medium text-gray-900">PDF Processed Successfully</h2>
+                <p class="mt-1 text-sm text-gray-500">Your PDF has been processed with the selected parameters.</p>
+            </div>
+            
+            <div class="mt-6">
+                <h3 class="text-sm font-medium text-gray-700">Processing Summary</h3>
+                <dl class="mt-2 grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Original Size</dt>
+                        <dd id="originalSize" class="mt-1 text-sm text-gray-900">245 KB</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">New Size</dt>
+                        <dd id="newSize" class="mt-1 text-sm text-gray-900">102 KB</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Reduction</dt>
+                        <dd id="reduction" class="mt-1 text-sm text-gray-900">58%</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Time Taken</dt>
+                        <dd id="timeTaken" class="mt-1 text-sm text-gray-900">2.4 seconds</dd>
+                    </div>
+                </dl>
+            </div>
+            
+            <div class="mt-6">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-medium text-gray-700">Download Processed File</h3>
+                    <span id="processedFileSize" class="text-xs text-gray-500">102 KB</span>
+                </div>
+                <a href="#" id="downloadLink" class="mt-2 inline-flex items-center justify-center w-full px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download Processed PDF
+                </a>
+            </div>
+            
+            <div class="mt-6 flex justify-center">
+                <button type="button" id="processAnotherButton" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Process Another PDF
+                </button>
+            </div>
+        </div>
+    {% endwith %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileUpload = document.getElementById('fileUpload');
+        const browseButton = document.getElementById('browseButton');
+        const fileValidation = document.getElementById('fileValidation');
+        const fileValidationStatus = document.getElementById('fileValidationStatus');
+        const fileSize = document.getElementById('fileSize');
+        const processButton = document.getElementById('processButton');
+        const resultsPanel = document.getElementById('resultsPanel');
+        const processAnotherButton = document.getElementById('processAnotherButton');
+        
+        // Handle browse button click
+        if (browseButton && fileUpload) {
+            browseButton.addEventListener('click', function() {
+                fileUpload.click();
+            });
+        }
+        
+        // Handle file upload
+        if (fileUpload && fileValidation && fileValidationStatus && fileSize) {
+            fileUpload.addEventListener('change', function() {
+                if (fileUpload.files.length > 0) {
+                    const file = fileUpload.files[0];
+                    
+                    // Validate file is a PDF
+                    if (file.type === 'application/pdf') {
+                        // Show validation status
+                        fileValidation.classList.remove('hidden');
+                        fileValidationStatus.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
+                        fileValidationStatus.innerHTML = `
+                            <svg class="mr-1.5 h-2 w-2 text-green-400" fill="currentColor" viewBox="0 0 8 8">
+                                <circle cx="4" cy="4" r="3" />
+                            </svg>
+                            Valid PDF
+                        `;
+                        
+                        // Format file size
+                        const fileSizeKB = Math.round(file.size / 1024);
+                        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                        
+                        if (fileSizeKB < 1024) {
+                            fileSize.textContent = `${fileSizeKB} KB`;
+                        } else {
+                            fileSize.textContent = `${fileSizeMB} MB`;
+                        }
+                        
+                        // Show success notification
+                        window.showSuccessNotification(
+                            'File Uploaded',
+                            'Your PDF file has been successfully uploaded and is ready for processing.',
+                            3000
+                        );
+                    } else {
+                        // Show validation error
+                        fileValidation.classList.remove('hidden');
+                        fileValidationStatus.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800';
+                        fileValidationStatus.innerHTML = `
+                            <svg class="mr-1.5 h-2 w-2 text-red-400" fill="currentColor" viewBox="0 0 8 8">
+                                <circle cx="4" cy="4" r="3" />
+                            </svg>
+                            Invalid File
+                        `;
+                        
+                        fileSize.textContent = '';
+                        
+                        // Show error notification
+                        window.showErrorNotification(
+                            'Invalid File',
+                            'Please upload a valid PDF file.',
+                            5000
+                        );
+                    }
+                }
+            });
+        }
+        
+        // Handle process button click
+        if (processButton && resultsPanel) {
+            processButton.addEventListener('click', function() {
+                if (fileUpload.files.length === 0) {
+                    window.showWarningNotification(
+                        'No File Selected',
+                        'Please upload a PDF file before processing.',
+                        5000
+                    );
+                    return;
+                }
+                
+                // Check if file is valid
+                if (fileValidationStatus.classList.contains('bg-red-100')) {
+                    window.showErrorNotification(
+                        'Invalid File',
+                        'Please upload a valid PDF file before processing.',
+                        5000
+                    );
+                    return;
+                }
+                
+                // Show progress tracker
+                window.showProgress();
+                window.simulateProgress();
+                
+                // Simulate processing (would be an AJAX call in real app)
+                setTimeout(function() {
+                    // Hide progress tracker
+                    window.hideProgress();
+                    
+                    // Show results panel
+                    resultsPanel.classList.remove('hidden');
+                    
+                    // Show success notification
+                    window.showSuccessNotification(
+                        'PDF Processed',
+                        'Your PDF has been successfully processed and is ready for download.',
+                        5000
+                    );
+                    
+                    // Scroll to results
+                    resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 3000);
+            });
+        }
+        
+        // Handle process another button click
+        if (processAnotherButton && resultsPanel) {
+            processAnotherButton.addEventListener('click', function() {
+                // Hide results panel
+                resultsPanel.classList.add('hidden');
+                
+                // Reset form
+                if (fileUpload) {
+                    fileUpload.value = '';
+                }
+                
+                if (fileValidation) {
+                    fileValidation.classList.add('hidden');
+                }
+                
+                // Show info notification
+                window.showInfoNotification(
+                    'Ready for Processing',
+                    'You can now upload and process another PDF file.',
+                    3000
+                );
+                
+                // Scroll to top
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+    });
+</script>
+{% endblock %} 

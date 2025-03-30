@@ -1,0 +1,14 @@
+{
+  "name": "pdf-editor-theme",
+  "version": "1.0.0",
+  "description": "Tailwind CSS theme for PDF Editor",
+  "scripts": {
+    "build": "tailwindcss -i ./src/input.css -o ./static/css/dist/styles.css",
+    "watch": "tailwindcss -i ./src/input.css -o ./static/css/dist/styles.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.1",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.35"
+  }
+} 

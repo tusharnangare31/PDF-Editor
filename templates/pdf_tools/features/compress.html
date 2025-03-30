@@ -1,0 +1,539 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Compress PDF{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow rounded-lg p-6">
+    <div class="flex items-center justify-between mb-4">
+        <h1 class="text-3xl font-bold text-gray-900">Compress PDF</h1>
+        <div class="flex items-center space-x-2">
+            <button type="button" id="helpButton" class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Help
+            </button>
+        </div>
+    </div>
+    
+    <p class="text-gray-600 mb-6">Reduce PDF file size while maintaining quality for easier sharing and storage.</p>
+
+    {% include "pdf_tools/components/notification.html" %}
+    
+    <div class="bg-white rounded-lg p-6">
+        <!-- Main Form -->
+        <form id="compressPdfForm" class="space-y-6">
+            <!-- Upload Area -->
+            <div class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 transition-all hover:border-blue-400" id="compressDropArea">
+                <input type="file" id="compressFile" name="file" accept=".pdf" class="absolute inset-0 w-full h-full opacity-0 z-50 cursor-pointer">
+                <div class="text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                    </svg>
+                    <h3 class="mt-2 text-lg font-medium text-gray-900">Drag & drop a PDF file here</h3>
+                    <p class="mt-1 text-sm text-gray-500">or click to browse</p>
+                    <p class="mt-3 text-xs text-gray-500">Maximum file size: 100MB</p>
+                </div>
+            </div>
+
+            <!-- Selected File Info -->
+            <div id="selectedCompressFile" class="hidden mt-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Selected File</h3>
+                <div id="compressFileInfo" class="bg-gray-50 rounded-lg p-4 text-sm flex items-center justify-between">
+                    <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <div>
+                            <p class="text-sm font-medium text-gray-800 filename">No file selected</p>
+                            <p id="fileSize" class="text-xs text-gray-500"></p>
+                        </div>
+                    </div>
+                    <div>
+                        <span id="fileValidation" class="text-xs rounded-full px-2 py-1"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PDF Details -->
+            <div id="pdfDetails" class="hidden">
+                <div class="bg-blue-50 border border-blue-100 rounded-lg p-4">
+                    <h4 class="text-blue-800 font-medium flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        PDF Information
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                        <div>
+                            <p class="text-sm text-gray-600">Original size: <span id="originalSize" class="font-medium">0</span></p>
+                            <p class="text-sm text-gray-600">Estimated compressed size: <span id="estimatedSize" class="font-medium">-</span></p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Potential reduction: <span id="potentialReduction" class="font-medium">-</span></p>
+                            <p class="text-sm text-gray-600">Processing time: <span id="processingTime" class="font-medium">~15 seconds</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compression Options -->
+            <div class="mt-6">
+                <label for="compressionLevel" class="block text-base font-medium text-gray-700 mb-3">Compression Level</label>
+                <div class="flex flex-col space-y-4">
+                    <div>
+                        <select id="compressionLevel" name="compressionLevel" class="w-full p-2.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 shadow-sm text-base">
+                            <option value="low">Low - Better quality (larger file size)</option>
+                            <option value="medium" selected>Medium - Balanced quality and size</option>
+                            <option value="high">High - Maximum compression (smaller file size)</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div id="lowOption" class="text-center cursor-pointer border rounded-lg p-3 hover:bg-gray-50 transition" onclick="document.getElementById('compressionLevel').value='low'; updateCompressionLevelUI('low');">
+                            <p class="text-base font-medium text-gray-700">Low</p>
+                            <p class="text-xs text-gray-500 mt-1">Minimal quality loss</p>
+                            <p class="text-xs text-gray-500 mt-1">~25% reduction</p>
+                        </div>
+                        <div id="mediumOption" class="text-center cursor-pointer border rounded-lg p-3 hover:bg-gray-50 transition bg-blue-50" onclick="document.getElementById('compressionLevel').value='medium'; updateCompressionLevelUI('medium');">
+                            <p class="text-base font-medium text-gray-700">Medium</p>
+                            <p class="text-xs text-gray-500 mt-1">Moderate quality loss</p>
+                            <p class="text-xs text-gray-500 mt-1">~50% reduction</p>
+                        </div>
+                        <div id="highOption" class="text-center cursor-pointer border rounded-lg p-3 hover:bg-gray-50 transition" onclick="document.getElementById('compressionLevel').value='high'; updateCompressionLevelUI('high');">
+                            <p class="text-base font-medium text-gray-700">High</p>
+                            <p class="text-xs text-gray-500 mt-1">Higher quality loss</p>
+                            <p class="text-xs text-gray-500 mt-1">~75% reduction</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Process Button -->
+            <div class="flex justify-center mt-8">
+                <button type="submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm text-base font-medium transition-colors relative">
+                    <span id="compressButtonText">Compress PDF</span>
+                    <span id="compressLoading" class="hidden absolute inset-0 flex items-center justify-center">
+                        <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </span>
+                </button>
+            </div>
+        </form>
+
+        <!-- Results Panel -->
+        <div id="resultsPanel" class="hidden mt-8 bg-white shadow-md rounded-lg p-6 border border-gray-200">
+            <div class="text-center">
+                <div class="inline-flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900">PDF Compressed Successfully</h2>
+                <p class="mt-2 text-base text-gray-600">Your PDF has been compressed with the selected compression level.</p>
+            </div>
+            
+            <div class="mt-8">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Compression Summary</h3>
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <dl class="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">Original Size</dt>
+                            <dd id="resultOriginalSize" class="mt-1 text-base text-gray-900 font-medium">-</dd>
+                        </div>
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">New Size</dt>
+                            <dd id="resultNewSize" class="mt-1 text-base text-gray-900 font-medium">-</dd>
+                        </div>
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">Reduction</dt>
+                            <dd id="resultReduction" class="mt-1 text-base text-green-600 font-medium">-</dd>
+                        </div>
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">Time Taken</dt>
+                            <dd id="resultTimeTaken" class="mt-1 text-base text-gray-900 font-medium">-</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+            
+            <div class="mt-8">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-lg font-medium text-gray-900">Download Compressed File</h3>
+                    <span id="resultFileSize" class="text-sm text-gray-600 font-medium">-</span>
+                </div>
+                <a href="#" id="downloadLink" class="flex items-center justify-center w-full px-4 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download Compressed PDF
+                </a>
+            </div>
+            
+            <div class="mt-6 flex justify-center">
+                <button type="button" id="compressAnotherButton" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Compress Another PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- Progress Tracker -->
+        {% include "pdf_tools/components/progress_tracker.html" %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const compressForm = document.getElementById('compressPdfForm');
+        const compressDropArea = document.getElementById('compressDropArea');
+        const compressFile = document.getElementById('compressFile');
+        const selectedCompressFile = document.getElementById('selectedCompressFile');
+        const compressFileInfo = document.getElementById('compressFileInfo');
+        const fileSizeEl = document.getElementById('fileSize');
+        const fileValidationEl = document.getElementById('fileValidation');
+        const pdfDetails = document.getElementById('pdfDetails');
+        const originalSizeEl = document.getElementById('originalSize');
+        const estimatedSizeEl = document.getElementById('estimatedSize');
+        const potentialReductionEl = document.getElementById('potentialReduction');
+        const compressionLevelSelect = document.getElementById('compressionLevel');
+        const compressButtonText = document.getElementById('compressButtonText');
+        const compressLoading = document.getElementById('compressLoading');
+        const lowOption = document.getElementById('lowOption');
+        const mediumOption = document.getElementById('mediumOption');
+        const highOption = document.getElementById('highOption');
+        const resultsPanel = document.getElementById('resultsPanel');
+        const resultOriginalSize = document.getElementById('resultOriginalSize');
+        const resultNewSize = document.getElementById('resultNewSize');
+        const resultReduction = document.getElementById('resultReduction');
+        const resultTimeTaken = document.getElementById('resultTimeTaken');
+        const resultFileSize = document.getElementById('resultFileSize');
+        const downloadLink = document.getElementById('downloadLink');
+        const compressAnotherButton = document.getElementById('compressAnotherButton');
+        const helpButton = document.getElementById('helpButton');
+        
+        let startTime;
+        let currentCompressionLevel = 'medium'; // Default
+
+        // Help button functionality
+        if (helpButton) {
+            helpButton.addEventListener('click', function() {
+                window.showInfoNotification(
+                    'Compress PDF Help',
+                    'This tool reduces your PDF file size while maintaining document quality. Choose from three compression levels based on your needs. Higher compression means smaller file size but may affect image quality.',
+                    8000
+                );
+            });
+        }
+
+        // Add drag and drop functionality
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            compressDropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            compressDropArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            compressDropArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            compressDropArea.classList.add('border-blue-500', 'bg-blue-50');
+        }
+        
+        function unhighlight() {
+            compressDropArea.classList.remove('border-blue-500', 'bg-blue-50');
+        }
+        
+        compressDropArea.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                compressFile.files = files;
+                updateCompressFileUI(files[0]);
+                validatePdfFile(files[0]);
+                updateSizeEstimation(files[0], compressionLevelSelect.value);
+            }
+        }
+
+        // Update UI when compression level changes
+        compressionLevelSelect.addEventListener('change', function() {
+            updateCompressionLevelUI(this.value);
+            
+            // Update estimated size
+            if (compressFile.files[0]) {
+                updateSizeEstimation(compressFile.files[0], this.value);
+            }
+        });
+        
+        window.updateCompressionLevelUI = function(level) {
+            currentCompressionLevel = level;
+            
+            // Reset all option styles
+            [lowOption, mediumOption, highOption].forEach(option => {
+                option.classList.remove('bg-blue-50');
+            });
+            
+            // Highlight selected option
+            if (level === 'low') lowOption.classList.add('bg-blue-50');
+            else if (level === 'medium') mediumOption.classList.add('bg-blue-50');
+            else if (level === 'high') highOption.classList.add('bg-blue-50');
+        }
+
+        // Handle file selection UI updates
+        compressFile.addEventListener('change', function() {
+            if (this.files[0]) {
+                updateCompressFileUI(this.files[0]);
+                validatePdfFile(this.files[0]);
+                updateSizeEstimation(this.files[0], compressionLevelSelect.value);
+            }
+        });
+
+        function updateCompressFileUI(file) {
+            if (file) {
+                selectedCompressFile.classList.remove('hidden');
+                pdfDetails.classList.remove('hidden');
+                compressDropArea.classList.add('border-blue-400', 'bg-blue-50');
+                compressDropArea.classList.remove('border-gray-300');
+                
+                const filename = compressFileInfo.querySelector('.filename');
+                filename.textContent = file.name;
+                
+                // Show file size
+                const fileSize = formatFileSize(file.size);
+                fileSizeEl.textContent = `Size: ${fileSize}`;
+                originalSizeEl.textContent = fileSize;
+            } else {
+                selectedCompressFile.classList.add('hidden');
+                pdfDetails.classList.add('hidden');
+                compressDropArea.classList.remove('border-blue-400', 'bg-blue-50');
+                compressDropArea.classList.add('border-gray-300');
+            }
+        }
+        
+        function validatePdfFile(file) {
+            // Check file extension
+            const isValidExtension = file.name.toLowerCase().endsWith('.pdf');
+            
+            if (!isValidExtension) {
+                fileValidationEl.textContent = 'Not a PDF file';
+                fileValidationEl.className = 'text-xs rounded-full px-2 py-1 bg-red-100 text-red-800';
+                
+                // Show error notification
+                window.showErrorNotification(
+                    'Invalid File Format',
+                    'Please upload a valid PDF file.',
+                    5000
+                );
+                
+                return false;
+            }
+            
+            // Check file size (max 100MB)
+            const maxSize = 100 * 1024 * 1024; // 100MB
+            if (file.size > maxSize) {
+                fileValidationEl.textContent = 'File too large (max 100MB)';
+                fileValidationEl.className = 'text-xs rounded-full px-2 py-1 bg-red-100 text-red-800';
+                
+                // Show error notification
+                window.showErrorNotification(
+                    'File Too Large',
+                    'Maximum file size is 100MB. Please upload a smaller file.',
+                    5000
+                );
+                
+                return false;
+            }
+            
+            // Success
+            fileValidationEl.textContent = 'Valid PDF';
+            fileValidationEl.className = 'text-xs rounded-full px-2 py-1 bg-green-100 text-green-800';
+            
+            // Show success notification
+            window.showSuccessNotification(
+                'File Validated',
+                'Your PDF has been verified and is ready for compression.',
+                3000
+            );
+            
+            return true;
+        }
+        
+        function updateSizeEstimation(file, compressionLevel) {
+            let estimatedReduction = 0;
+            
+            // Estimate based on compression level
+            switch(compressionLevel) {
+                case 'low':
+                    estimatedReduction = 0.25; // 25%
+                    break;
+                case 'high':
+                    estimatedReduction = 0.75; // 75%
+                    break;
+                default: // medium
+                    estimatedReduction = 0.5; // 50%
+            }
+            
+            // Adjust based on file size - larger files compress more
+            if (file.size > 10 * 1024 * 1024) { // > 10MB
+                estimatedReduction += 0.05; // Additional 5%
+            } else if (file.size < 1 * 1024 * 1024) { // < 1MB
+                estimatedReduction -= 0.1; // 10% less
+            }
+            
+            // Estimate compressed size
+            const estimatedSize = file.size * (1 - estimatedReduction);
+            estimatedSizeEl.textContent = formatFileSize(estimatedSize);
+            potentialReductionEl.textContent = `~${Math.round(estimatedReduction * 100)}%`;
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Handle form submission
+        compressForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!compressFile.files[0]) {
+                // Show warning notification
+                window.showWarningNotification(
+                    'No File Selected',
+                    'Please select a PDF file to compress.',
+                    5000
+                );
+                return;
+            }
+            
+            // Validate file
+            if (!validatePdfFile(compressFile.files[0])) {
+                return;
+            }
+            
+            // Start timer
+            startTime = new Date();
+            
+            // Show loading state
+            compressButtonText.classList.add('opacity-0');
+            compressLoading.classList.remove('hidden');
+            
+            // Show progress tracker
+            window.showProgress();
+            window.simulateProgress();
+            
+            // Create form data
+            const formData = new FormData();
+            formData.append('file', compressFile.files[0]);
+            formData.append('compressionLevel', compressionLevelSelect.value);
+            
+            // Send request
+            fetch('/api/pdf/compress/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to compress PDF');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Calculate time taken
+                const endTime = new Date();
+                const timeTaken = ((endTime - startTime) / 1000).toFixed(1);
+                
+                // Hide progress tracker
+                window.hideProgress();
+                
+                // Show results
+                resultOriginalSize.textContent = formatFileSize(data.original_size);
+                resultNewSize.textContent = formatFileSize(data.compressed_size);
+                
+                const reduction = ((data.original_size - data.compressed_size) / data.original_size * 100).toFixed(1);
+                resultReduction.textContent = `${reduction}% smaller`;
+                
+                resultTimeTaken.textContent = `${timeTaken} seconds`;
+                resultFileSize.textContent = formatFileSize(data.compressed_size);
+                
+                // Set download link
+                downloadLink.href = data.file_url;
+                
+                // Show results panel
+                resultsPanel.classList.remove('hidden');
+                
+                // Show success notification
+                window.showSuccessNotification(
+                    'PDF Compressed Successfully',
+                    `Your PDF has been compressed by ${reduction}%.`,
+                    5000
+                );
+                
+                // Reset button state
+                compressButtonText.classList.remove('opacity-0');
+                compressLoading.classList.add('hidden');
+                
+                // Scroll to results
+                resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                
+                // Hide progress tracker
+                window.hideProgress();
+                
+                // Reset button state
+                compressButtonText.classList.remove('opacity-0');
+                compressLoading.classList.add('hidden');
+                
+                // Show error notification
+                window.showErrorNotification(
+                    'Compression Failed',
+                    'There was an error compressing your PDF. Please try again.',
+                    5000
+                );
+            });
+        });
+        
+        // Handle process another button
+        if (compressAnotherButton) {
+            compressAnotherButton.addEventListener('click', function() {
+                // Hide results panel
+                resultsPanel.classList.add('hidden');
+                
+                // Reset form
+                compressFile.value = '';
+                updateCompressFileUI(null);
+                
+                // Show info notification
+                window.showInfoNotification(
+                    'Ready for Processing',
+                    'You can now upload and process another PDF file.',
+                    3000
+                );
+                
+                // Scroll to top
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+    });
+</script>
+{% endblock %}

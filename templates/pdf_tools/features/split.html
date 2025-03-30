@@ -1,0 +1,539 @@
+{% extends 'base.html' %}
+
+{% block title %}Split PDF{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow rounded-lg p-6">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Split PDF</h1>
+    <p class="text-gray-600 mb-8">Extract specific pages from your PDF files</p>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <form id="splitPdfForm" class="space-y-4">
+            <div class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 transition-all" id="splitDropArea">
+                <input type="file" id="splitFile" name="file" accept=".pdf" class="absolute inset-0 w-full h-full opacity-0 z-50 cursor-pointer">
+                <div class="text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                    </svg>
+                    <h3 class="mt-2 text-lg font-medium text-gray-900">Drag & drop a PDF file here</h3>
+                    <p class="mt-1 text-sm text-gray-500">or click to browse</p>
+                </div>
+            </div>
+
+            <div id="selectedSplitFile" class="hidden mt-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Selected File:</h3>
+                <div id="splitFileInfo" class="bg-gray-50 rounded-lg p-3 text-sm flex flex-wrap items-center justify-between">
+                    <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span class="text-gray-800 filename">No file selected</span>
+                        <span id="fileSize" class="ml-2 text-xs text-gray-500"></span>
+                    </div>
+                    <div>
+                        <span id="fileValidation" class="text-xs rounded-full px-2 py-1"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pdfPreview" class="hidden mt-4">
+                <div class="bg-indigo-50 p-3 rounded-lg">
+                    <h4 class="text-indigo-700 font-medium">PDF Information</h4>
+                    <div class="grid grid-cols-2 gap-2 mt-2">
+                        <div>
+                            <p class="text-sm text-gray-600">Total pages: <span id="totalPdfPages" class="font-medium">-</span></p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Size: <span id="pdfSize" class="font-medium">-</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <label for="splitPages" class="block text-sm font-medium text-gray-700 mb-1">Pages to extract (e.g., 1,3,5-7)</label>
+                <input type="text" id="splitPages" name="pages" class="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" placeholder="Enter page numbers">
+                <div class="mt-2">
+                    <p class="text-xs text-gray-600">Use comma to separate individual pages and hyphen for page ranges</p>
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        <span class="text-xs inline-flex items-center px-2 py-1 rounded-full bg-indigo-100 text-indigo-800 cursor-pointer hover:bg-indigo-200 transition-colors" data-example="1,3,5">First, third, fifth pages</span>
+                        <span class="text-xs inline-flex items-center px-2 py-1 rounded-full bg-indigo-100 text-indigo-800 cursor-pointer hover:bg-indigo-200 transition-colors" data-example="1-5">Pages 1 to 5</span>
+                        <span class="text-xs inline-flex items-center px-2 py-1 rounded-full bg-indigo-100 text-indigo-800 cursor-pointer hover:bg-indigo-200 transition-colors" data-example="2,4-7,9">Pages 2, 4-7, and 9</span>
+                        <span class="text-xs inline-flex items-center px-2 py-1 rounded-full bg-indigo-100 text-indigo-800 cursor-pointer hover:bg-indigo-200 transition-colors" data-example="1">First page only</span>
+                        <span class="text-xs inline-flex items-center px-2 py-1 rounded-full bg-indigo-100 text-indigo-800 cursor-pointer hover:bg-indigo-200 transition-colors" data-example="all">All pages</span>
+                    </div>
+                </div>
+                <div id="pageValidationMessage" class="mt-2 text-sm hidden"></div>
+            </div>
+
+            <div class="flex justify-center">
+                <button type="submit" class="mt-4 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md shadow transition-colors relative">
+                    <span id="splitButtonText">Split PDF</span>
+                    <span id="splitLoading" class="hidden absolute inset-0 flex items-center justify-center">
+                        <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+<script>
+    // Set PDF.js worker path
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const splitForm = document.getElementById('splitPdfForm');
+        const splitDropArea = document.getElementById('splitDropArea');
+        const splitFile = document.getElementById('splitFile');
+        const selectedSplitFile = document.getElementById('selectedSplitFile');
+        const splitFileInfo = document.getElementById('splitFileInfo');
+        const fileSizeEl = document.getElementById('fileSize');
+        const fileValidationEl = document.getElementById('fileValidation');
+        const pdfPreview = document.getElementById('pdfPreview');
+        const totalPdfPagesEl = document.getElementById('totalPdfPages');
+        const pdfSizeEl = document.getElementById('pdfSize');
+        const splitButtonText = document.getElementById('splitButtonText');
+        const splitLoading = document.getElementById('splitLoading');
+        const pageExamples = document.querySelectorAll('[data-example]');
+        const splitPagesInput = document.getElementById('splitPages');
+        const pageValidationMessage = document.getElementById('pageValidationMessage');
+        
+        let totalPdfPages = 0;
+        let pagesArray = [];
+        
+        // Handle file selection UI updates
+        splitFile.addEventListener('change', function() {
+            if (this.files[0]) {
+                updateSplitFileUI(this.files[0]);
+                validatePdfFile(this.files[0]);
+            }
+        });
+
+        function updateSplitFileUI(file) {
+            if (file) {
+                selectedSplitFile.classList.remove('hidden');
+                splitDropArea.classList.remove('border-gray-300');
+                splitDropArea.classList.add('border-indigo-500', 'bg-indigo-50');
+                
+                const filename = splitFileInfo.querySelector('.filename');
+                filename.textContent = file.name;
+                
+                // Show file size
+                const fileSize = formatFileSize(file.size);
+                fileSizeEl.textContent = `(${fileSize})`;
+                pdfSizeEl.textContent = fileSize;
+            } else {
+                selectedSplitFile.classList.add('hidden');
+                pdfPreview.classList.add('hidden');
+                splitDropArea.classList.add('border-gray-300');
+                splitDropArea.classList.remove('border-indigo-500', 'bg-indigo-50');
+            }
+        }
+        
+        function validatePdfFile(file) {
+            // Check file extension
+            const isValidExtension = file.name.toLowerCase().endsWith('.pdf');
+            
+            if (!isValidExtension) {
+                fileValidationEl.textContent = 'Not a PDF file';
+                fileValidationEl.className = 'text-xs rounded-full px-2 py-1 bg-red-100 text-red-800';
+                return false;
+            }
+            
+            // Check file size (max 100MB)
+            const maxSize = 100 * 1024 * 1024; // 100MB
+            if (file.size > maxSize) {
+                fileValidationEl.textContent = 'File too large (max 100MB)';
+                fileValidationEl.className = 'text-xs rounded-full px-2 py-1 bg-red-100 text-red-800';
+                return false;
+            }
+            
+            // Now try to count pages using PDF.js
+            fileValidationEl.textContent = 'Analyzing PDF...';
+            fileValidationEl.className = 'text-xs rounded-full px-2 py-1 bg-yellow-100 text-yellow-800';
+            
+            // Use PDF.js to get the page count
+            const fileReader = new FileReader();
+            fileReader.onload = function(e) {
+                const typedArray = new Uint8Array(e.target.result);
+                
+                // Load PDF with PDF.js
+                pdfjsLib.getDocument(typedArray).promise.then(function(pdf) {
+                    totalPdfPages = pdf.numPages;
+                    
+                    fileValidationEl.textContent = 'Valid PDF';
+                    fileValidationEl.className = 'text-xs rounded-full px-2 py-1 bg-green-100 text-green-800';
+                    
+                    // Show PDF preview with page count
+                    pdfPreview.classList.remove('hidden');
+                    totalPdfPagesEl.textContent = totalPdfPages;
+                    
+                    // Re-validate page range if already entered
+                    if (splitPagesInput.value) {
+                        validatePageRange();
+                    }
+                }).catch(function(error) {
+                    console.error("Error loading PDF:", error);
+                    fileValidationEl.textContent = 'Invalid PDF';
+                    fileValidationEl.className = 'text-xs rounded-full px-2 py-1 bg-red-100 text-red-800';
+                });
+            };
+            fileReader.readAsArrayBuffer(file);
+            
+            return true;
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // Initialize click handlers for page examples
+        pageExamples.forEach(example => {
+            example.addEventListener('click', function() {
+                const exampleType = this.getAttribute('data-example');
+                splitPagesInput.value = exampleType;
+                console.log(`Set page range to: ${exampleType}`);
+                validatePageRange();
+            });
+        });
+        
+        // Validate page range when input changes
+        splitPagesInput.addEventListener('input', validatePageRange);
+        
+        function validatePageRange() {
+            // Reset validation
+            pageValidationMessage.classList.add('hidden');
+            pageValidationMessage.classList.remove('text-red-600', 'text-green-600', 'text-yellow-600');
+            
+            const pageRangeInput = splitPagesInput.value.trim();
+            
+            if (!pageRangeInput) {
+                return; // Empty input, don't show validation
+            }
+            
+            if (totalPdfPages === 0) {
+                // Can't validate without knowing total pages
+                pageValidationMessage.textContent = "Upload a PDF first to validate page numbers";
+                pageValidationMessage.classList.remove('hidden');
+                pageValidationMessage.classList.add('text-yellow-600');
+                return false;
+            }
+            
+            // Special keyword "all"
+            if (pageRangeInput.toLowerCase() === 'all') {
+                pageValidationMessage.textContent = `All ${totalPdfPages} pages will be extracted`;
+                pageValidationMessage.classList.remove('hidden');
+                pageValidationMessage.classList.add('text-green-600');
+                return true;
+            }
+            
+            try {
+                // Parse the page range
+                pagesArray = [];
+                let invalidPages = [];
+                const requestedPages = new Set();
+                const parts = pageRangeInput.split(',');
+                
+                for (const part of parts) {
+                    const trimmedPart = part.trim();
+                    if (!trimmedPart) continue;
+                    
+                    if (trimmedPart.includes('-')) {
+                        // Range like "1-5"
+                        const [start, end] = trimmedPart.split('-').map(num => parseInt(num.trim(), 10));
+                        
+                        if (isNaN(start) || isNaN(end)) {
+                            throw new Error(`Invalid range: ${trimmedPart}`);
+                        }
+                        
+                        if (start > end) {
+                            throw new Error(`Start page greater than end page in range: ${trimmedPart}`);
+                        }
+                        
+                        if (start < 1) {
+                            throw new Error(`Invalid page number: ${start} (must be >= 1)`);
+                        }
+                        
+                        // Check if end exceeds PDF length and track for warning
+                        if (end > totalPdfPages) {
+                            for (let i = totalPdfPages + 1; i <= end; i++) {
+                                invalidPages.push(i);
+                            }
+                            // Continue with valid pages
+                            const validEnd = Math.min(end, totalPdfPages);
+                            for (let i = start; i <= validEnd; i++) {
+                                pagesArray.push(i);
+                                requestedPages.add(i);
+                            }
+                        } else {
+                            // Add all pages in range
+                            for (let i = start; i <= end; i++) {
+                                pagesArray.push(i);
+                                requestedPages.add(i);
+                            }
+                        }
+                    } else {
+                        // Single page
+                        const pageNum = parseInt(trimmedPart, 10);
+                        
+                        if (isNaN(pageNum)) {
+                            throw new Error(`Invalid page number: ${trimmedPart}`);
+                        }
+                        
+                        if (pageNum < 1) {
+                            throw new Error(`Invalid page number: ${pageNum} (must be >= 1)`);
+                        }
+                        
+                        if (pageNum > totalPdfPages) {
+                            invalidPages.push(pageNum);
+                        } else {
+                            pagesArray.push(pageNum);
+                            requestedPages.add(pageNum);
+                        }
+                    }
+                }
+                
+                // Remove duplicates
+                pagesArray = [...new Set(pagesArray)].sort((a, b) => a - b);
+                
+                if (pagesArray.length === 0 && invalidPages.length === 0) {
+                    throw new Error('No valid pages specified');
+                }
+                
+                // Success with warning if needed
+                if (invalidPages.length > 0) {
+                    // Show warning but allow form submission
+                    const pagesMsg = pagesArray.length === 0 ? 
+                        "No valid pages to extract!" : 
+                        (pagesArray.length === 1 ? 
+                            `Only page ${pagesArray[0]} will be extracted` : 
+                            `Only ${pagesArray.length} pages will be extracted: ${pagesArray.join(', ')}`);
+                    
+                    pageValidationMessage.innerHTML = `
+                        <div class="mb-1">${pagesMsg}</div>
+                        <div class="text-yellow-600">
+                            Warning: ${invalidPages.length} page(s) exceed the document's length (${totalPdfPages} pages): ${invalidPages.join(', ')}
+                        </div>
+                    `;
+                    pageValidationMessage.classList.remove('hidden');
+                    pageValidationMessage.classList.add('text-yellow-600');
+                    return pagesArray.length > 0; // Valid only if we have some valid pages
+                } else {
+                    // All pages valid
+                    pageValidationMessage.textContent = pagesArray.length === 1 
+                        ? `Page ${pagesArray[0]} will be extracted`
+                        : `${pagesArray.length} pages will be extracted: ${pagesArray.join(', ')}`;
+                    pageValidationMessage.classList.remove('hidden');
+                    pageValidationMessage.classList.add('text-green-600');
+                    return true;
+                }
+            } catch (error) {
+                pageValidationMessage.textContent = error.message;
+                pageValidationMessage.classList.remove('hidden');
+                pageValidationMessage.classList.add('text-red-600');
+                return false;
+            }
+        }
+
+        // Handle form submission
+        splitForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!splitFile.files[0]) {
+                alert('Please select a PDF file to split.');
+                return;
+            }
+            
+            if (!splitPagesInput.value.trim()) {
+                alert('Please specify which pages to extract.');
+                return;
+            }
+            
+            // Additional validation before submission
+            if (splitPagesInput.value.trim() !== 'all' && pagesArray.length === 0) {
+                if (!validatePageRange()) {
+                    alert('Please enter a valid page range.');
+                    return;
+                }
+            }
+            
+            // Show loading state
+            splitButtonText.classList.add('invisible');
+            splitLoading.classList.remove('hidden');
+            
+            const formData = new FormData();
+            formData.append('file', splitFile.files[0]);
+            
+            // Send the raw page range to the server
+            formData.append('pages', splitPagesInput.value.trim());
+            
+            console.log('Sending request...');
+            console.log('Pages:', splitPagesInput.value.trim());
+            
+            // Send the request
+            fetch('/api/split-pdf/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                // Hide loading state
+                splitButtonText.classList.remove('invisible');
+                splitLoading.classList.add('hidden');
+                
+                console.log('Server response:', data);
+                
+                if (data.success) {
+                    // Show results with a better UI
+                    showSplitResults(data);
+                } else {
+                    console.error('Server reported error:', data.error);
+                    alert('Error splitting PDF: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                // Hide loading state
+                splitButtonText.classList.remove('invisible');
+                splitLoading.classList.add('hidden');
+                
+                console.error('Request failed:', error);
+                alert('Error splitting PDF: ' + error.message);
+            });
+        });
+        
+        function showSplitResults(data) {
+            // Create or get the results container
+            let resultsDiv = document.getElementById('splitResults');
+            if (!resultsDiv) {
+                resultsDiv = document.createElement('div');
+                resultsDiv.id = 'splitResults';
+                resultsDiv.className = 'mt-6 bg-indigo-50 rounded-lg p-4 border border-indigo-200';
+                splitForm.appendChild(resultsDiv);
+            }
+            
+            // Set the results content
+            const pageText = data.total_pages === 1 ? 'page' : 'pages';
+            let statusHtml = '';
+            
+            // Add status message for skipped pages if any
+            if (data.status_message) {
+                statusHtml = `
+                    <div class="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        ${data.status_message}
+                    </div>
+                `;
+            }
+            
+            // Show information about the original PDF
+            const pdfInfoHtml = `
+                <div class="mb-3 p-2 bg-white rounded border border-indigo-100 text-sm">
+                    <p class="text-gray-700">
+                        <span class="font-medium">Original PDF:</span> ${data.total_pdf_pages} pages
+                    </p>
+                    <p class="text-gray-700">
+                        <span class="font-medium">Pages requested:</span> ${data.requested_pages.join(', ')}
+                    </p>
+                    <p class="text-gray-700">
+                        <span class="font-medium">Pages extracted:</span> ${data.pages_extracted.join(', ')}
+                    </p>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = `
+                <h3 class="text-lg font-semibold text-indigo-800 mb-2">PDF Successfully Split!</h3>
+                <div class="mb-4">
+                    <p class="text-sm text-gray-700">
+                        <span class="font-medium">${data.total_pages}</span> ${pageText} extracted from your PDF.
+                    </p>
+                    ${pdfInfoHtml}
+                    ${statusHtml}
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <a href="${data.file_url}" class="flex-1 text-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download PDF
+                    </a>
+                    <button onclick="window.location.reload()" class="flex-1 text-center px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Split Another PDF
+                    </button>
+                </div>
+                <div class="mt-3 text-center">
+                    <div class="text-xs text-gray-500">
+                        All files are automatically deleted after 24 hours for your privacy
+                    </div>
+                </div>
+            `;
+            
+            // Scroll to the results
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Handle drag and drop UI for file input
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            splitDropArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            splitDropArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            splitDropArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            splitDropArea.classList.add('border-indigo-500', 'bg-indigo-50');
+        }
+
+        function unhighlight() {
+            splitDropArea.classList.remove('border-indigo-500', 'bg-indigo-50');
+            if (!splitFile.files[0]) {
+                splitDropArea.classList.add('border-gray-300');
+                splitDropArea.classList.remove('bg-indigo-50');
+            }
+        }
+
+        splitDropArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files[0]) {
+                splitFile.files = files;
+                updateSplitFileUI(files[0]);
+                validatePdfFile(files[0]);
+            }
+        }
+    });
+</script>
+{% endblock %} 

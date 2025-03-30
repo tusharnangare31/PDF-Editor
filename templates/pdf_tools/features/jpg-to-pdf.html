@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+
+{% block title %}JPG to PDF{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow rounded-lg p-6">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">JPG to PDF</h1>
+    <p class="text-gray-600 mb-8">Convert image files to PDF format</p>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <form id="jpgToPdfForm" class="space-y-4">
+            <div class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 transition-all" id="jpgDropArea">
+                <input type="file" id="jpgFiles" name="files" multiple accept=".jpg,.jpeg,.png" class="absolute inset-0 w-full h-full opacity-0 z-50 cursor-pointer">
+                <div class="text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <h3 class="mt-2 text-lg font-medium text-gray-900">Drag & drop image files here</h3>
+                    <p class="mt-1 text-sm text-gray-500">or click to browse (JPG, JPEG, PNG)</p>
+                    <p class="mt-1 text-sm text-blue-600">You can select multiple images</p>
+                </div>
+            </div>
+
+            <div id="selectedJpgFiles" class="hidden mt-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-lg font-medium text-gray-900">Selected Images:</h3>
+                    <p class="text-sm text-yellow-600">Drag images to reorder</p>
+                </div>
+                <ul id="jpgFilesList" class="bg-gray-50 rounded-lg p-3 max-h-80 overflow-y-auto text-sm">
+                    <!-- Selected files will be displayed here -->
+                </ul>
+            </div>
+
+            <div class="mt-6">
+                <div class="flex items-center gap-4">
+                    <label for="pageLayout" class="block text-sm font-medium text-gray-700">Page Layout:</label>
+                    <select id="pageLayout" name="pageLayout" class="block p-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500">
+                        <option value="1">1 image per page</option>
+                        <option value="2">2 images per page</option>
+                        <option value="4">4 images per page</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex justify-center">
+                <button type="submit" class="mt-4 px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-md shadow transition-colors relative">
+                    <span id="jpgButtonText">Convert to PDF</span>
+                    <span id="jpgLoading" class="hidden absolute inset-0 flex items-center justify-center">
+                        <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const jpgForm = document.getElementById('jpgToPdfForm');
+        const jpgDropArea = document.getElementById('jpgDropArea');
+        const jpgFiles = document.getElementById('jpgFiles');
+        const selectedJpgFiles = document.getElementById('selectedJpgFiles');
+        const jpgFilesList = document.getElementById('jpgFilesList');
+        const jpgButtonText = document.getElementById('jpgButtonText');
+        const jpgLoading = document.getElementById('jpgLoading');
+        
+        let fileList = []; // Array to store the files in order
+
+        // Handle file selection UI updates
+        jpgFiles.addEventListener('change', function() {
+            updateFilesArray(this.files);
+            updateJpgFilesUI();
+        });
+
+        function updateFilesArray(files) {
+            for (const file of files) {
+                // Only add if it's an image file
+                if (file.type.match('image.*') && !fileList.some(f => f.name === file.name)) {
+                    fileList.push(file);
+                }
+            }
+        }
+
+        function updateJpgFilesUI() {
+            if (fileList.length > 0) {
+                selectedJpgFiles.classList.remove('hidden');
+                jpgDropArea.classList.remove('border-gray-300');
+                jpgDropArea.classList.add('border-yellow-500', 'bg-yellow-50');
+                
+                jpgFilesList.innerHTML = '';
+                fileList.forEach((file, index) => {
+                    const item = document.createElement('li');
+                    item.className = 'flex items-center py-2 px-2 border-b last:border-0 cursor-move hover:bg-yellow-50 rounded';
+                    item.dataset.index = index;
+                    item.draggable = true;
+                    
+                    // Create image preview
+                    const imgUrl = URL.createObjectURL(file);
+                    
+                    item.innerHTML = `
+                        <div class="flex items-center flex-1">
+                            <div class="mr-2 text-gray-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                                </svg>
+                            </div>
+                            <img src="${imgUrl}" class="h-10 w-10 object-cover rounded mr-2" alt="${file.name}">
+                            <span class="text-gray-800">${file.name}</span>
+                        </div>
+                        <button type="button" class="text-red-500 hover:text-red-700 remove-file" data-index="${index}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    `;
+                    jpgFilesList.appendChild(item);
+                    
+                    // Add drag and drop functionality
+                    item.addEventListener('dragstart', handleDragStart);
+                    item.addEventListener('dragover', handleDragOver);
+                    item.addEventListener('dragenter', handleDragEnter);
+                    item.addEventListener('dragleave', handleDragLeave);
+                    item.addEventListener('drop', handleDrop);
+                    item.addEventListener('dragend', handleDragEnd);
+                    
+                    // Add remove button functionality
+                    const removeBtn = item.querySelector('.remove-file');
+                    removeBtn.addEventListener('click', function() {
+                        const index = parseInt(this.dataset.index);
+                        URL.revokeObjectURL(imgUrl); // Clean up memory
+                        fileList.splice(index, 1);
+                        updateJpgFilesUI();
+                    });
+                });
+            } else {
+                selectedJpgFiles.classList.add('hidden');
+                jpgDropArea.classList.add('border-gray-300');
+                jpgDropArea.classList.remove('border-yellow-500', 'bg-yellow-50');
+            }
+        }
+        
+        // Drag and drop for reordering
+        let dragSrcEl = null;
+        
+        function handleDragStart(e) {
+            this.style.opacity = '0.4';
+            dragSrcEl = this;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.dataset.index);
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+        
+        function handleDragEnter(e) {
+            this.classList.add('bg-yellow-100');
+        }
+        
+        function handleDragLeave(e) {
+            this.classList.remove('bg-yellow-100');
+        }
+        
+        function handleDrop(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            
+            if (dragSrcEl !== this) {
+                const fromIndex = parseInt(dragSrcEl.dataset.index);
+                const toIndex = parseInt(this.dataset.index);
+                
+                // Reorder the files array
+                const temp = fileList[fromIndex];
+                if (fromIndex < toIndex) {
+                    // Moving down
+                    fileList.splice(toIndex + 1, 0, temp);
+                    fileList.splice(fromIndex, 1);
+                } else {
+                    // Moving up
+                    fileList.splice(toIndex, 0, temp);
+                    fileList.splice(fromIndex + 1, 1);
+                }
+                
+                updateJpgFilesUI();
+            }
+            
+            return false;
+        }
+        
+        function handleDragEnd(e) {
+            const items = document.querySelectorAll('#jpgFilesList li');
+            items.forEach(function(item) {
+                item.classList.remove('bg-yellow-100');
+                item.style.opacity = '1';
+            });
+        }
+
+        // Handle form submission
+        jpgForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (fileList.length < 1) {
+                alert('Please select at least one image file to convert.');
+                return;
+            }
+            
+            // Show loading state
+            jpgButtonText.classList.add('invisible');
+            jpgLoading.classList.remove('hidden');
+            
+            const formData = new FormData();
+            for (const file of fileList) {
+                formData.append('files', file);
+            }
+            
+            // Add page layout option
+            formData.append('pageLayout', document.getElementById('pageLayout').value);
+            
+            fetch('/api/jpg-to-pdf/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading state
+                jpgButtonText.classList.remove('invisible');
+                jpgLoading.classList.add('hidden');
+                
+                if (data.success) {
+                    alert('Images converted to PDF successfully!');
+                    window.location.href = data.file_url;
+                } else {
+                    alert('Error converting images: ' + data.error);
+                }
+            })
+            .catch(error => {
+                // Hide loading state
+                jpgButtonText.classList.remove('invisible');
+                jpgLoading.classList.add('hidden');
+                
+                alert('Error converting images: ' + error);
+            });
+        });
+
+        // Handle drag and drop UI for file input
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            jpgDropArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            jpgDropArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            jpgDropArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            jpgDropArea.classList.add('border-yellow-500', 'bg-yellow-50');
+        }
+
+        function unhighlight() {
+            jpgDropArea.classList.remove('border-yellow-500', 'bg-yellow-50');
+            if (fileList.length === 0) {
+                jpgDropArea.classList.add('border-gray-300');
+                jpgDropArea.classList.remove('bg-yellow-50');
+            }
+        }
+
+        jpgDropArea.addEventListener('drop', handleFileDrop, false);
+
+        function handleFileDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            updateFilesArray(files);
+            updateJpgFilesUI();
+        }
+    });
+</script>
+{% endblock %} 

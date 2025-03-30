@@ -1,0 +1,67 @@
+        <!-- Feature card styles -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Merge PDF -->
+            <a href="{% url 'merge_pdf_view' %}" class="block bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-5 text-center card-hover">
+                <div class="flex justify-center mb-3">
+                    <div class="bg-blue-50 rounded-full p-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                        </svg>
+                    </div>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Merge PDF</h3>
+                <p class="text-sm text-gray-600">Combine multiple PDF files into one document</p>
+            </a>
+
+            <!-- Split PDF -->
+            <a href="{% url 'split_pdf_view' %}" class="block bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-5 text-center card-hover">
+                <div class="flex justify-center mb-3">
+                    <div class="bg-green-50 rounded-full p-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2 M10 11v4 M14 11v4" />
+                        </svg>
+                    </div>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Split PDF</h3>
+                <p class="text-sm text-gray-600">Extract pages from a PDF into a new document</p>
+            </a>
+
+            <!-- Compress PDF -->
+            <a href="{% url 'compress_pdf_view' %}" class="block bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-5 text-center card-hover">
+                <div class="flex justify-center mb-3">
+                    <div class="bg-yellow-50 rounded-full p-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                        </svg>
+                    </div>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Compress PDF</h3>
+                <p class="text-sm text-gray-600">Reduce the file size of your PDF documents</p>
+            </a>
+
+            <!-- OCR PDF -->
+            <a href="{% url 'ocr_pdf_view' %}" class="block bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-5 text-center card-hover">
+                <div class="flex justify-center mb-3">
+                    <div class="bg-purple-50 rounded-full p-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                        </svg>
+                    </div>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">OCR PDF</h3>
+                <p class="text-sm text-gray-600">Make text in scanned PDFs searchable</p>
+            </a>
+
+            <!-- Remove Pages -->
+            <a href="{% url 'remove_pages_view' %}" class="block bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-5 text-center card-hover">
+                <div class="flex justify-center mb-3">
+                    <div class="bg-red-50 rounded-full p-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </div>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Remove Pages</h3>
+                <p class="text-sm text-gray-600">Delete specific pages from your PDF</p>
+            </a>
+        </div> 

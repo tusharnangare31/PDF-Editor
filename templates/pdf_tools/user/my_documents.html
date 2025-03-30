@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}My Documents{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow rounded-lg p-6">
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">My Documents</h1>
+        <a href="{% url 'profile' %}" class="mt-4 md:mt-0 inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+            <i class="fas fa-user-circle mr-2"></i>
+            View Profile
+        </a>
+    </div>
+
+    {% if documents %}
+        <div class="bg-white shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            File
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Type
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Size
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Date
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for document in documents %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-gray-100 rounded-lg">
+                                        <i class="fas fa-file-pdf text-red-500 text-lg"></i>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">
+                                            {{ document.title }}
+                                        </div>
+                                        <div class="text-sm text-gray-500">
+                                            {{ document.filename }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if document.document_type == 'original' %}bg-gray-100 text-gray-800
+                                    {% elif document.document_type == 'merged' %}bg-blue-100 text-blue-800
+                                    {% elif document.document_type == 'split' %}bg-purple-100 text-purple-800
+                                    {% elif document.document_type == 'compressed' %}bg-green-100 text-green-800
+                                    {% elif document.document_type == 'converted' %}bg-yellow-100 text-yellow-800
+                                    {% elif document.document_type == 'edited' %}bg-indigo-100 text-indigo-800
+                                    {% elif document.document_type == 'secured' %}bg-red-100 text-red-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ document.get_document_type_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {% with kb=document.file_size|filesizeformat %}
+                                    {{ kb }}
+                                {% endwith %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ document.created_at|date:"M d, Y" }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                <a href="{{ document.file.url }}" class="text-blue-600 hover:text-blue-900" target="_blank">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                <button type="button" class="text-yellow-600 hover:text-yellow-900 favorite-toggle" data-id="{{ document.id }}" data-favorite="{{ document.is_favorite|yesno:'true,false' }}">
+                                    <i class="{% if document.is_favorite %}fas{% else %}far{% endif %} fa-star"></i>
+                                </button>
+                                <a href="{% url 'delete_document' document.id %}" class="text-red-600 hover:text-red-900">
+                                    <i class="fas fa-trash-alt"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="bg-white rounded-lg shadow-md p-8 text-center">
+            <div class="flex justify-center mb-4">
+                <i class="far fa-folder-open text-gray-400 text-5xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No documents yet</h3>
+            <p class="text-gray-600 mb-4">
+                You haven't saved any documents. Process a PDF and choose to save it to your account.
+            </p>
+            <a href="{% url 'home' %}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700">
+                <i class="fas fa-home mr-2"></i>
+                Go to Home Page
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle favorite toggle buttons
+        const toggleButtons = document.querySelectorAll('.favorite-toggle');
+        
+        toggleButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const documentId = this.getAttribute('data-id');
+                const isFavorite = this.getAttribute('data-favorite') === 'true';
+                const icon = this.querySelector('i');
+                
+                // Send AJAX request to toggle favorite status
+                fetch(`/document/${documentId}/toggle-favorite/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Update the UI
+                        this.setAttribute('data-favorite', data.is_favorite);
+                        
+                        if (data.is_favorite) {
+                            icon.classList.remove('far');
+                            icon.classList.add('fas');
+                        } else {
+                            icon.classList.remove('fas');
+                            icon.classList.add('far');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        });
+        
+        // Helper function to get CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
+{% endblock %} 
