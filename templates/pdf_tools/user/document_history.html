@@ -19,63 +19,160 @@
     </div>
 
     {% if history %}
-        <div class="bg-white shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Operation
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Date & Time
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Input
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Output
-                        </th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    {% for item in history %}
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full">
-                                    {{ item.get_operation_display }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">{{ item.timestamp|date:"M d, Y" }}</div>
-                                <div class="text-sm text-gray-500">{{ item.timestamp|time:"H:i:s" }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {% if item.input_document %}
-                                    <a href="{{ item.input_document.file.url }}" class="text-blue-600 hover:text-blue-900">
-                                        {{ item.input_document.title }}
-                                    </a>
-                                {% else %}
-                                    <span class="text-gray-400">—</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                {% if item.output_document %}
-                                    <a href="{{ item.output_document.file.url }}" class="text-sm text-blue-600 hover:text-blue-900 flex items-center">
-                                        <span class="mr-1">{{ item.output_document.title }}</span>
-                                        <i class="fas fa-download text-xs"></i>
-                                    </a>
-                                    <div class="text-xs text-gray-500 mt-1">
-                                        {{ item.output_document.file_size|filesizeformat }}
-                                    </div>
-                                {% else %}
-                                    <span class="text-gray-400">—</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="flex justify-between items-center mb-3">
+            <div class="flex space-x-2">
+                <button id="selectAllBtn" type="button" class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                    <i class="far fa-check-square mr-1"></i> Select All
+                </button>
+                <form id="clearAllForm" action="{% url 'delete_all_history' %}" method="post" class="inline">
+                    {% csrf_token %}
+                    <button id="clearAllBtn" type="button" class="inline-flex items-center px-3 py-1.5 border border-red-300 text-sm font-medium rounded text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        <i class="fas fa-trash-alt mr-1"></i> Clear All History
+                    </button>
+                </form>
+            </div>
+            <button id="deleteSelectedBtn" type="button" class="hidden inline-flex items-center px-3 py-1.5 border border-red-300 text-sm font-medium rounded text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                <i class="fas fa-trash-alt mr-1"></i> Delete Selected
+            </button>
         </div>
+        <form id="historyForm" method="post" action="{% url 'delete_history_items' %}">
+            {% csrf_token %}
+            <div class="bg-white shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500">
+                                <input type="checkbox" id="selectAll" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded cursor-pointer">
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Operation
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Date & Time
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Input
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Output
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for item in history %}
+                            <tr>
+                                <td class="px-3 py-4 whitespace-nowrap">
+                                    <input type="checkbox" name="history_ids" value="{{ item.id }}" class="history-checkbox h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded cursor-pointer">
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        {% if item.operation == 'merge' %}bg-blue-100 text-blue-800
+                                        {% elif item.operation == 'split' %}bg-purple-100 text-purple-800
+                                        {% elif item.operation == 'compress' %}bg-green-100 text-green-800
+                                        {% elif item.operation == 'convert' %}bg-yellow-100 text-yellow-800
+                                        {% elif item.operation == 'edit' %}bg-indigo-100 text-indigo-800
+                                        {% elif item.operation == 'secure' %}bg-red-100 text-red-800
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ item.get_operation_display }}
+                                    </span>
+                                    {% if item.details %}
+                                    <div class="text-xs text-gray-500 mt-1">{{ item.details }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">{{ item.timestamp|date:"M d, Y" }}</div>
+                                    <div class="text-sm text-gray-500">{{ item.timestamp|time:"H:i:s" }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {% if item.input_document %}
+                                        <a href="{{ item.input_document.file.url }}" class="text-blue-600 hover:text-blue-900 flex items-center">
+                                            <i class="fas fa-file-pdf text-red-500 mr-2"></i>
+                                            <span>{{ item.input_document.title }}</span>
+                                        </a>
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            {{ item.input_document.file_size|filesizeformat }}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-gray-400">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if item.output_document %}
+                                        <a href="{{ item.output_document.file.url }}" class="text-sm text-blue-600 hover:text-blue-900 flex items-center">
+                                            <i class="fas fa-file-pdf text-red-500 mr-2"></i>
+                                            <span>{{ item.output_document.title }}</span>
+                                        </a>
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            {{ item.output_document.file_size|filesizeformat }}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-gray-400">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div class="flex space-x-2">
+                                        {% if item.output_document %}
+                                            <a href="{{ item.output_document.file.url }}" class="inline-flex items-center px-2.5 py-1.5 border border-blue-300 text-xs font-medium rounded text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" target="_blank">
+                                                <i class="fas fa-download mr-1"></i> Download
+                                            </a>
+                                        {% endif %}
+                                        {% if item.input_document or item.output_document %}
+                                            <a href="{% url 'repeat_operation' item.id %}" class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                                <i class="fas fa-redo mr-1"></i> Repeat
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if history.has_other_pages %}
+            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4">
+                <div class="flex-1 flex justify-between items-center">
+                    {% if history.has_previous %}
+                    <a href="?page={{ history.previous_page_number }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        Previous
+                    </a>
+                    {% else %}
+                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-300 bg-white cursor-not-allowed">
+                        Previous
+                    </span>
+                    {% endif %}
+                    
+                    <div class="hidden md:flex">
+                        {% for i in history.paginator.page_range %}
+                            {% if history.number == i %}
+                            <span class="relative inline-flex items-center px-4 py-2 border border-red-500 text-sm font-medium rounded-md text-red-600 bg-white mx-1">
+                                {{ i }}
+                            </span>
+                            {% else %}
+                            <a href="?page={{ i }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 mx-1">
+                                {{ i }}
+                            </a>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    
+                    {% if history.has_next %}
+                    <a href="?page={{ history.next_page_number }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        Next
+                    </a>
+                    {% else %}
+                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-300 bg-white cursor-not-allowed">
+                        Next
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </form>
     {% else %}
         <div class="bg-white rounded-lg shadow-md p-8 text-center">
             <div class="flex justify-center mb-4">
@@ -85,11 +182,98 @@
             <p class="text-gray-600 mb-4">
                 Your PDF processing history will appear here once you use any of the tools.
             </p>
-            <a href="{% url 'home' %}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700">
+            <a href="{% url 'home' %}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700">
                 <i class="fas fa-tools mr-2"></i>
                 Go to Tools
             </a>
         </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const historyCheckboxes = document.querySelectorAll('.history-checkbox');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+        const historyForm = document.getElementById('historyForm');
+        
+        // Function to update the delete button visibility
+        function updateDeleteButtonVisibility() {
+            const checkedCount = document.querySelectorAll('.history-checkbox:checked').length;
+            if (checkedCount > 0) {
+                deleteSelectedBtn.classList.remove('hidden');
+                deleteSelectedBtn.textContent = `Delete Selected (${checkedCount})`;
+            } else {
+                deleteSelectedBtn.classList.add('hidden');
+            }
+        }
+        
+        // Event listener for the select all checkbox
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                const isChecked = this.checked;
+                historyCheckboxes.forEach(checkbox => {
+                    checkbox.checked = isChecked;
+                });
+                updateDeleteButtonVisibility();
+            });
+        }
+        
+        // Event listener for individual checkboxes
+        historyCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                // Update the select all checkbox
+                selectAllCheckbox.checked = 
+                    historyCheckboxes.length === document.querySelectorAll('.history-checkbox:checked').length;
+                updateDeleteButtonVisibility();
+            });
+        });
+        
+        // Event listener for select all button
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', function() {
+                const allSelected = historyCheckboxes.length === document.querySelectorAll('.history-checkbox:checked').length;
+                historyCheckboxes.forEach(checkbox => {
+                    checkbox.checked = !allSelected;
+                });
+                selectAllCheckbox.checked = !allSelected;
+                updateDeleteButtonVisibility();
+                
+                // Toggle button text
+                if (!allSelected) {
+                    this.innerHTML = '<i class="far fa-check-square mr-1"></i> Unselect All';
+                } else {
+                    this.innerHTML = '<i class="far fa-check-square mr-1"></i> Select All';
+                }
+            });
+        }
+        
+        // Event listener for delete button
+        if (deleteSelectedBtn) {
+            deleteSelectedBtn.addEventListener('click', function() {
+                const checkedCount = document.querySelectorAll('.history-checkbox:checked').length;
+                if (checkedCount === 0) return;
+                
+                if (confirm(`Are you sure you want to delete ${checkedCount} selected items from your history?`)) {
+                    historyForm.submit();
+                }
+            });
+        }
+        
+        // Event listener for clear all button
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const clearAllForm = document.getElementById('clearAllForm');
+        if (clearAllBtn && clearAllForm) {
+            clearAllBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to clear your entire operation history? This cannot be undone.')) {
+                    // Submit the clear all form
+                    clearAllForm.submit();
+                }
+            });
+        }
+    });
+</script>
 {% endblock %} 

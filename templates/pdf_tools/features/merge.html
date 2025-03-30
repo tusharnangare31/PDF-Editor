@@ -64,6 +64,25 @@
 {% endblock %}
 
 {% block extra_js %}
+<style>
+    .drag-item-over {
+        border: 2px dashed #3b82f6;
+        background-color: rgba(219, 234, 254, 0.8);
+    }
+    
+    .item-dragging {
+        opacity: 0.4;
+        border: 2px solid #3b82f6;
+    }
+    
+    .drag-handle {
+        cursor: grab;
+    }
+    
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+</style>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const mergeForm = document.getElementById('mergePdfForm');
@@ -108,15 +127,21 @@
                 let totalBytes = fileList.reduce((total, file) => total + file.size, 0);
                 totalSizeEl.textContent = formatFileSize(totalBytes);
                 
+                // Clear the list first
                 mergeFilesList.innerHTML = '';
+                
+                // Add each file with the correct index
                 fileList.forEach((file, index) => {
                     const item = document.createElement('li');
                     item.className = 'flex items-center py-2 px-2 border-b last:border-0 cursor-move hover:bg-blue-50 rounded';
-                    item.dataset.index = index;
+                    // Set the current index as data attribute
+                    item.setAttribute('data-index', index);
                     item.draggable = true;
+                    
+                    // Create item contents
                     item.innerHTML = `
                         <div class="flex items-center flex-1">
-                            <div class="mr-2 text-gray-400">
+                            <div class="mr-2 text-gray-400 drag-handle">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
                                 </svg>
@@ -133,9 +158,11 @@
                             </svg>
                         </button>
                     `;
+                    
+                    // Append to the list
                     mergeFilesList.appendChild(item);
                     
-                    // Add drag and drop functionality
+                    // Add drag and drop event listeners
                     item.addEventListener('dragstart', handleDragStart);
                     item.addEventListener('dragover', handleDragOver);
                     item.addEventListener('dragenter', handleDragEnter);
@@ -146,8 +173,11 @@
                     // Add remove button functionality
                     const removeBtn = item.querySelector('.remove-file');
                     removeBtn.addEventListener('click', function() {
-                        const index = parseInt(this.dataset.index);
-                        fileList.splice(index, 1);
+                        // Get the correct index from the data attribute
+                        const removeIndex = parseInt(this.getAttribute('data-index'));
+                        // Remove the file at that index
+                        fileList.splice(removeIndex, 1);
+                        // Update the UI to reflect changes
                         updateMergeFilesUI();
                         validateFiles();
                     });
@@ -205,46 +235,76 @@
         let dragSrcEl = null;
         
         function handleDragStart(e) {
-            this.style.opacity = '0.4';
             dragSrcEl = this;
+            
+            // Add a class to show the item is being dragged
+            this.classList.add('item-dragging');
+            
+            // Store the source index in the dataTransfer object
             e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', this.dataset.index);
+            e.dataTransfer.setData('text/plain', this.getAttribute('data-index'));
+            
+            // Create a drag image (optional, for better UX)
+            const dragIcon = this.cloneNode(true);
+            dragIcon.style.width = `${this.offsetWidth}px`;
+            dragIcon.style.height = `${this.offsetHeight}px`;
+            dragIcon.style.opacity = '0.5';
+            document.body.appendChild(dragIcon);
+            e.dataTransfer.setDragImage(dragIcon, 20, 20);
+            setTimeout(() => {
+                document.body.removeChild(dragIcon);
+            }, 0);
         }
         
         function handleDragOver(e) {
-            e.preventDefault();
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
             e.dataTransfer.dropEffect = 'move';
             return false;
         }
         
         function handleDragEnter(e) {
-            this.classList.add('bg-blue-100');
+            // Highlight drop target
+            this.classList.add('drag-item-over');
         }
         
         function handleDragLeave(e) {
-            this.classList.remove('bg-blue-100');
+            // Remove highlight
+            this.classList.remove('drag-item-over');
         }
         
         function handleDrop(e) {
-            e.stopPropagation();
-            e.preventDefault();
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
             
+            // Remove highlighting
+            this.classList.remove('drag-item-over');
+            
+            // Only proceed if dropping onto a different item
             if (dragSrcEl !== this) {
-                const fromIndex = parseInt(dragSrcEl.dataset.index);
-                const toIndex = parseInt(this.dataset.index);
+                const fromIndex = parseInt(dragSrcEl.getAttribute('data-index'));
+                const toIndex = parseInt(this.getAttribute('data-index'));
                 
-                // Reorder the files array
-                const temp = fileList[fromIndex];
-                if (fromIndex < toIndex) {
-                    // Moving down
-                    fileList.splice(toIndex + 1, 0, temp);
-                    fileList.splice(fromIndex, 1);
-                } else {
-                    // Moving up
-                    fileList.splice(toIndex, 0, temp);
-                    fileList.splice(fromIndex + 1, 1);
-                }
+                console.log(`Moving item from index ${fromIndex} to index ${toIndex}`);
                 
+                // Create a copy of the file being moved
+                const movedFile = fileList[fromIndex];
+                
+                // Create a new array without the moved file
+                const newFileList = fileList.filter((_, index) => index !== fromIndex);
+                
+                // Insert the moved file at the new position
+                newFileList.splice(toIndex, 0, movedFile);
+                
+                // Update the fileList
+                fileList = newFileList;
+                
+                // Refresh the UI to show the new order
                 updateMergeFilesUI();
             }
             
@@ -252,12 +312,42 @@
         }
         
         function handleDragEnd(e) {
+            // Reset styles
             const items = document.querySelectorAll('#mergeFilesList li');
             items.forEach(function(item) {
-                item.classList.remove('bg-blue-100');
-                item.style.opacity = '1';
+                item.classList.remove('drag-item-over');
+                item.classList.remove('item-dragging');
             });
         }
+
+        // Add file drop functionality to the drop area
+        mergeDropArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.classList.add('border-blue-500', 'bg-blue-50');
+        });
+        
+        mergeDropArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (fileList.length === 0) {
+                this.classList.remove('border-blue-500', 'bg-blue-50');
+                this.classList.add('border-gray-300');
+            }
+        });
+        
+        mergeDropArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.classList.add('border-blue-500', 'bg-blue-50');
+            
+            const dt = e.dataTransfer;
+            if (dt.files.length) {
+                updateFilesArray(dt.files);
+                updateMergeFilesUI();
+                validateFiles();
+            }
+        });
 
         // Handle form submission
         mergeForm.addEventListener('submit', function(e) {
@@ -358,49 +448,6 @@
             
             // Scroll to the results
             resultsDiv.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        // Handle drag and drop UI for file input
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            mergeDropArea.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            mergeDropArea.addEventListener(eventName, highlight, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            mergeDropArea.addEventListener(eventName, unhighlight, false);
-        });
-
-        function highlight() {
-            mergeDropArea.classList.add('border-blue-500', 'bg-blue-50');
-        }
-
-        function unhighlight() {
-            mergeDropArea.classList.remove('border-blue-500', 'bg-blue-50');
-            if (fileList.length === 0) {
-                mergeDropArea.classList.add('border-gray-300');
-                mergeDropArea.classList.remove('bg-blue-50');
-            }
-        }
-
-        mergeDropArea.addEventListener('drop', handleDrop, false);
-
-        function handleDrop(e) {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            
-            if (files.length > 0) {
-                updateFilesArray(files);
-                updateMergeFilesUI();
-                validateFiles();
-            }
         }
     });
 </script>

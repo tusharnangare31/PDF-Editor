@@ -65,4 +65,8 @@ urlpatterns = [
     path('api/unlock-pdf/', views.unlock_pdf, name='unlock_pdf'),
     path('api/protect-pdf/', views.protect_pdf, name='protect_pdf'),
     path('api/sign-pdf/', views.sign_pdf, name='sign_pdf'),
+
+    path('history/<int:history_id>/repeat/', views.repeat_operation, name='repeat_operation'),
+    path('history/delete/', views.delete_history_items, name='delete_history_items'),
+    path('history/delete-all/', views.delete_all_history, name='delete_all_history'),
 ] 

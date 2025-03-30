@@ -122,8 +122,37 @@
         const totalPages = document.getElementById('totalPages');
         const rotateButtonText = document.getElementById('rotateButtonText');
         const rotateLoading = document.getElementById('rotateLoading');
+        const rotationAngleInputs = document.querySelectorAll('input[name="rotationAngle"]');
         
         let selectedFile = null;
+        let selectedAngle = 90; // Default to 90 degrees
+
+        // Initialize rotation angle from default checked radio button
+        document.querySelectorAll('input[name="rotationAngle"]').forEach(input => {
+            // Mark the currently selected button 
+            if (input.checked) {
+                selectedAngle = parseInt(input.value);
+                const label = input.closest('label');
+                label.querySelector('div').classList.add('border-2', 'border-yellow-500', 'bg-yellow-50');
+                console.log(`Initial rotation angle: ${selectedAngle}°`);
+            }
+            
+            // Add event listeners to each rotation angle radio button
+            input.addEventListener('change', function() {
+                // Remove highlight from all buttons
+                document.querySelectorAll('input[name="rotationAngle"]').forEach(btn => {
+                    const btnLabel = btn.closest('label');
+                    btnLabel.querySelector('div').classList.remove('border-2', 'border-yellow-500', 'bg-yellow-50');
+                });
+                
+                // Add highlight to selected button
+                const label = this.closest('label');
+                label.querySelector('div').classList.add('border-2', 'border-yellow-500', 'bg-yellow-50');
+                
+                selectedAngle = parseInt(this.value);
+                console.log(`Rotation angle changed to: ${selectedAngle}°`);
+            });
+        });
 
         // Handle file selection UI updates
         pdfFile.addEventListener('change', function() {
@@ -183,24 +212,36 @@
                 return;
             }
             
+            // Get the selected rotation angle
+            const checkedAngle = document.querySelector('input[name="rotationAngle"]:checked');
+            const rotationAngle = checkedAngle ? parseInt(checkedAngle.value) : 90;
+            
+            console.log(`Submitting form with rotation angle: ${rotationAngle}°`);
+            console.log(`Page range: ${document.getElementById('pageRange').value || 'all'}`);
+            
             // Show loading state
             rotateButtonText.classList.add('invisible');
             rotateLoading.classList.remove('hidden');
             
             const formData = new FormData();
             formData.append('file', selectedFile);
-            formData.append('angle', document.querySelector('input[name="rotationAngle"]:checked').value);
-            formData.append('pages', document.getElementById('pageRange').value);
+            formData.append('angle', rotationAngle.toString());
+            formData.append('pages', document.getElementById('pageRange').value || 'all');
             
             fetch('/api/rotate-pdf/', {
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Response received:', response.status);
+                return response.json();
+            })
             .then(data => {
                 // Hide loading state
                 rotateButtonText.classList.remove('invisible');
                 rotateLoading.classList.add('hidden');
+                
+                console.log('Response data:', data);
                 
                 if (data.success) {
                     alert('PDF rotated successfully!');
@@ -214,6 +255,7 @@
                 rotateButtonText.classList.remove('invisible');
                 rotateLoading.classList.add('hidden');
                 
+                console.error('Fetch error:', error);
                 alert('Error rotating PDF: ' + error);
             });
         });

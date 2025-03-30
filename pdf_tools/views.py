@@ -28,9 +28,22 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 from reportlab.lib.pagesizes import letter
 import uuid
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 def home(request):
     return render(request, 'pdf_tools/home.html')
+
+def _get_context_with_preloaded_document(request):
+    """Helper function to get context with preloaded document from session if available"""
+    context = {}
+    if request.user.is_authenticated and 'preload_document_id' in request.session:
+        try:
+            document_id = request.session.pop('preload_document_id')
+            document = ProcessedDocument.objects.get(id=document_id, user=request.user)
+            context['preloaded_document'] = document
+        except ProcessedDocument.DoesNotExist:
+            pass
+    return context
 
 def organize(request):
     return render(request, 'pdf_tools/organize.html')
@@ -46,53 +59,228 @@ def security(request):
 
 # Individual feature views
 def merge_pdf_view(request):
-    return render(request, 'pdf_tools/features/merge.html')
+    context = _get_context_with_preloaded_document(request)
+    return render(request, 'pdf_tools/features/merge.html', context)
 
 def split_pdf_view(request):
-    return render(request, 'pdf_tools/features/split.html')
+    context = _get_context_with_preloaded_document(request)
+    return render(request, 'pdf_tools/features/split.html', context)
 
 def compress_pdf_view(request):
-    return render(request, 'pdf_tools/features/compress.html')
+    context = _get_context_with_preloaded_document(request)
+    return render(request, 'pdf_tools/features/compress.html', context)
 
 def jpg_to_pdf_view(request):
-    return render(request, 'pdf_tools/features/jpg-to-pdf.html')
+    context = _get_context_with_preloaded_document(request)
+    return render(request, 'pdf_tools/features/jpg-to-pdf.html', context)
 
 # New view functions for feature pages
 def ocr_pdf_view(request):
-    return render(request, 'pdf_tools/features/ocr.html')
+    context = _get_context_with_preloaded_document(request)
+    return render(request, 'pdf_tools/features/ocr.html', context)
 
 def pdf_to_jpg_view(request):
-    return render(request, 'pdf_tools/features/pdf-to-jpg.html')
+    context = _get_context_with_preloaded_document(request)
+    return render(request, 'pdf_tools/features/pdf-to-jpg.html', context)
 
 def pdf_to_word_view(request):
-    return render(request, 'pdf_tools/features/pdf-to-word.html')
+    context = _get_context_with_preloaded_document(request)
+    return render(request, 'pdf_tools/features/pdf-to-word.html', context)
 
 def pdf_to_ppt_view(request):
-    return render(request, 'pdf_tools/features/pdf-to-ppt.html')
+    context = _get_context_with_preloaded_document(request)
+    return render(request, 'pdf_tools/features/pdf-to-ppt.html', context)
 
 def word_to_pdf_view(request):
-    return render(request, 'pdf_tools/features/word-to-pdf.html')
+    context = _get_context_with_preloaded_document(request)
+    return render(request, 'pdf_tools/features/word-to-pdf.html', context)
 
 def ppt_to_pdf_view(request):
-    return render(request, 'pdf_tools/features/ppt-to-pdf.html')
+    context = _get_context_with_preloaded_document(request)
+    return render(request, 'pdf_tools/features/ppt-to-pdf.html', context)
 
 def rotate_pdf_view(request):
-    return render(request, 'pdf_tools/features/rotate.html')
+    context = _get_context_with_preloaded_document(request)
+    return render(request, 'pdf_tools/features/rotate.html', context)
+
+@csrf_exempt
+def rotate_pdf(request):
+    if request.method == 'POST':
+        try:
+            print("Rotate PDF request received")
+            
+            if 'file' not in request.FILES:
+                print("Error: No file provided")
+                return JsonResponse({
+                    'success': False,
+                    'error': 'No file provided'
+                })
+                
+            file = request.FILES['file']
+            
+            # Get and validate rotation angle
+            try:
+                angle = int(request.POST.get('angle', '90'))
+                print(f"Requested rotation angle: {angle}°")
+                
+                # Validate angle
+                if angle not in [90, 180, 270]:
+                    print(f"Invalid angle: {angle}, defaulting to 90°")
+                    angle = 90
+            except ValueError:
+                print(f"Invalid angle format: {request.POST.get('angle')}, defaulting to 90°")
+                angle = 90
+                
+            # Get and parse page range
+            pages = request.POST.get('pages', 'all')
+            print(f"Requested pages to rotate: {pages}")
+            
+            try:
+                # Open and validate the PDF
+                reader = PyPDF2.PdfReader(file)
+                writer = PyPDF2.PdfWriter()
+                total_pages = len(reader.pages)
+                
+                print(f"PDF has {total_pages} pages")
+                
+                if total_pages == 0:
+                    print("Error: PDF has no pages")
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'The uploaded PDF has no pages'
+                    })
+                
+                # Parse page range
+                page_numbers = []
+                if pages == 'all':
+                    # Rotate all pages
+                    page_numbers = list(range(1, total_pages + 1))
+                    print(f"Rotating all {total_pages} pages")
+                else:
+                    # Parse specified pages
+                    print(f"Parsing page range: {pages}")
+                    for part in pages.split(','):
+                        part = part.strip()
+                        if not part:
+                            continue
+                            
+                        if '-' in part:
+                            try:
+                                start, end = map(int, part.split('-'))
+                                # Check if range is valid
+                                if start < 1:
+                                    start = 1
+                                if end > total_pages:
+                                    end = total_pages
+                                if start <= end:
+                                    page_numbers.extend(range(start, end + 1))
+                                    print(f"Added page range {start}-{end}")
+                            except ValueError:
+                                # Skip invalid ranges
+                                print(f"Skipping invalid range: {part}")
+                                continue
+                        else:
+                            try:
+                                page = int(part)
+                                if 1 <= page <= total_pages:
+                                    page_numbers.append(page)
+                                    print(f"Added page {page}")
+                                else:
+                                    print(f"Page {page} out of range (1-{total_pages})")
+                            except ValueError:
+                                # Skip invalid page numbers
+                                print(f"Skipping invalid page number: {part}")
+                                continue
+                
+                # If no valid pages were specified, rotate all pages
+                if not page_numbers:
+                    page_numbers = list(range(1, total_pages + 1))
+                    print(f"No valid pages specified, rotating all {total_pages} pages")
+                
+                # Remove duplicates and sort
+                page_numbers = sorted(list(set(page_numbers)))
+                print(f"Final pages to rotate: {page_numbers}")
+                
+                # Rotate specified pages
+                for i, page in enumerate(reader.pages):
+                    if i + 1 in page_numbers:
+                        print(f"Rotating page {i+1} by {angle}°")
+                        page.rotate(angle)
+                    writer.add_page(page)
+                
+                # Ensure media directory exists
+                os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+                
+                # Create unique filename
+                timestamp = int(time.time())
+                output_filename = f'rotated_{timestamp}.pdf'
+                output_path = os.path.join(settings.MEDIA_ROOT, output_filename)
+                
+                print(f"Writing rotated PDF to {output_path}")
+                
+                with open(output_path, 'wb') as output_file:
+                    writer.write(output_file)
+                
+                print(f"Rotation completed successfully")
+                
+                return JsonResponse({
+                    'success': True,
+                    'file_url': f'/media/{output_filename}',
+                    'rotated_pages': len(page_numbers),
+                    'angle': angle
+                })
+            except Exception as e:
+                import traceback
+                print(f"Error during PDF rotation: {str(e)}")
+                print(traceback.format_exc())
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Error during PDF rotation: {str(e)}'
+                })
+                
+        except KeyError as e:
+            print(f"Missing required field: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'error': f'Missing required field: {str(e)}'
+            })
+        except ValueError as e:
+            print(f"Invalid value: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'error': f'Invalid value: {str(e)}'
+            })
+        except Exception as e:
+            import traceback
+            print(f"Unexpected error: {str(e)}")
+            print(traceback.format_exc())
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    print("Invalid request method for rotate_pdf")
+    return JsonResponse({'error': 'Invalid request method'})
 
 def add_page_numbers_view(request):
-    return render(request, 'pdf_tools/features/add-page-numbers.html')
+    context = _get_context_with_preloaded_document(request)
+    return render(request, 'pdf_tools/features/add-page-numbers.html', context)
 
 def add_watermark_view(request):
-    return render(request, 'pdf_tools/features/add-watermark.html')
+    context = _get_context_with_preloaded_document(request)
+    return render(request, 'pdf_tools/features/add-watermark.html', context)
 
 def protect_pdf_view(request):
-    return render(request, 'pdf_tools/features/protect.html')
+    context = _get_context_with_preloaded_document(request)
+    return render(request, 'pdf_tools/features/protect.html', context)
 
 def unlock_pdf_view(request):
-    return render(request, 'pdf_tools/features/unlock.html')
+    context = _get_context_with_preloaded_document(request)
+    return render(request, 'pdf_tools/features/unlock.html', context)
 
 def remove_pages_view(request):
-    return render(request, 'pdf_tools/features/remove-pages.html')
+    context = _get_context_with_preloaded_document(request)
+    return render(request, 'pdf_tools/features/remove-pages.html', context)
 
 @csrf_exempt
 def merge_pdf(request):
@@ -109,6 +297,9 @@ def merge_pdf(request):
             
             for file in files:
                 merger.append(file)
+            
+            # Ensure media directory exists
+            os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
             
             output_path = os.path.join(settings.MEDIA_ROOT, 'merged.pdf')
             with open(output_path, 'wb') as output_file:
@@ -1078,47 +1269,6 @@ def pdf_to_ppt(request):
     return JsonResponse({'error': 'Invalid request method'})
 
 @csrf_exempt
-def rotate_pdf(request):
-    if request.method == 'POST':
-        try:
-            file = request.FILES['file']
-            angle = int(request.POST['angle'])
-            pages = request.POST['pages']
-            
-            reader = PyPDF2.PdfReader(file)
-            writer = PyPDF2.PdfWriter()
-            
-            # Parse page range
-            page_numbers = []
-            for part in pages.split(','):
-                if '-' in part:
-                    start, end = map(int, part.split('-'))
-                    page_numbers.extend(range(start, end + 1))
-                else:
-                    page_numbers.append(int(part))
-            
-            # Rotate specified pages
-            for i, page in enumerate(reader.pages):
-                if i + 1 in page_numbers:
-                    page.rotate(angle)
-                writer.add_page(page)
-            
-            output_path = os.path.join(settings.MEDIA_ROOT, 'rotated.pdf')
-            with open(output_path, 'wb') as output_file:
-                writer.write(output_file)
-            
-            return JsonResponse({
-                'success': True,
-                'file_url': f'/media/rotated.pdf'
-            })
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': str(e)
-            })
-    return JsonResponse({'error': 'Invalid request method'})
-
-@csrf_exempt
 def add_page_numbers(request):
     if request.method == 'POST':
         try:
@@ -1467,6 +1617,9 @@ def remove_pages(request):
                 if i + 1 not in pages_to_remove_list:
                     writer.add_page(page)
             
+            # Ensure media directory exists
+            os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+            
             output_path = os.path.join(settings.MEDIA_ROOT, 'modified.pdf')
             with open(output_path, 'wb') as output_file:
                 writer.write(output_file)
@@ -1542,7 +1695,21 @@ def my_documents(request):
 
 @login_required
 def document_history(request):
-    history = DocumentHistory.objects.filter(user=request.user)
+    history_list = DocumentHistory.objects.filter(user=request.user).order_by('-timestamp')
+    
+    # Pagination
+    paginator = Paginator(history_list, 10)  # Show 10 items per page
+    page = request.GET.get('page')
+    
+    try:
+        history = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page
+        history = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range, deliver last page
+        history = paginator.page(paginator.num_pages)
+    
     context = {'history': history}
     return render(request, 'pdf_tools/user/document_history.html', context)
 
@@ -1636,3 +1803,97 @@ def save_processed_file(user, file_path, title, document_type, operation, detail
     history.save()
     
     return document
+
+@login_required
+def repeat_operation(request, history_id):
+    """
+    Repeats a previously performed operation by redirecting to the appropriate tool page
+    with the document pre-loaded.
+    """
+    history_item = get_object_or_404(DocumentHistory, id=history_id, user=request.user)
+    
+    # Map operations to their view URLs
+    operation_views = {
+        'merge': 'merge_pdf_view',
+        'split': 'split_pdf_view',
+        'compress': 'compress_pdf_view',
+        'convert_to_jpg': 'pdf_to_jpg_view',
+        'convert_to_word': 'pdf_to_word_view',
+        'convert_to_ppt': 'pdf_to_ppt_view',
+        'convert_from_jpg': 'jpg_to_pdf_view',
+        'convert_from_word': 'word_to_pdf_view',
+        'convert_from_ppt': 'ppt_to_pdf_view',
+        'rotate': 'rotate_pdf_view',
+        'add_page_numbers': 'add_page_numbers_view',
+        'add_watermark': 'add_watermark_view',
+        'remove_pages': 'remove_pages_view',
+        'protect': 'protect_pdf_view',
+        'unlock': 'unlock_pdf_view',
+        'ocr': 'ocr_pdf_view',
+    }
+    
+    # Get the view name based on the operation
+    view_name = operation_views.get(history_item.operation)
+    
+    if not view_name:
+        messages.error(request, "This operation cannot be repeated.")
+        return redirect('document_history')
+    
+    # Store the document ID in session to pre-load it on the tool page
+    if history_item.input_document:
+        request.session['preload_document_id'] = history_item.input_document.id
+    elif history_item.output_document:
+        request.session['preload_document_id'] = history_item.output_document.id
+    
+    messages.info(request, "Previous operation loaded. You can make adjustments before processing.")
+    return redirect(view_name)
+
+@login_required
+def delete_history_items(request):
+    """
+    Deletes multiple history items at once based on selected checkboxes
+    """
+    if request.method == 'POST':
+        history_ids = request.POST.getlist('history_ids')
+        
+        if not history_ids:
+            messages.warning(request, "No history items were selected for deletion.")
+            return redirect('document_history')
+            
+        # Delete the selected history items
+        count = 0
+        for history_id in history_ids:
+            try:
+                history_item = DocumentHistory.objects.get(id=history_id, user=request.user)
+                history_item.delete()
+                count += 1
+            except DocumentHistory.DoesNotExist:
+                continue
+                
+        if count == 1:
+            messages.success(request, f"1 history item was deleted successfully.")
+        else:
+            messages.success(request, f"{count} history items were deleted successfully.")
+            
+    return redirect('document_history')
+
+@login_required
+def delete_all_history(request):
+    """
+    Deletes all history items for the current user
+    """
+    if request.method == 'POST':
+        # Get the count of items before deletion for the message
+        count = DocumentHistory.objects.filter(user=request.user).count()
+        
+        # Delete all history items
+        DocumentHistory.objects.filter(user=request.user).delete()
+        
+        if count == 0:
+            messages.info(request, "Your history was already empty.")
+        elif count == 1:
+            messages.success(request, f"1 history item was deleted successfully.")
+        else:
+            messages.success(request, f"{count} history items were deleted successfully.")
+    
+    return redirect('document_history')
